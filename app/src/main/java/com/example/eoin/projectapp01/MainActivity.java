@@ -49,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
 
         CognitoCachingCredentialsProvider credentialsProvider = new CognitoCachingCredentialsProvider(
                 getApplicationContext(),
-                "AWS ID HERE", // Identity pool (removed for github)
+                "eu-west-1:0e854cdc-c925-462a-a214-d58d9f16cdc3", // Identity pool ID
                 Regions.EU_WEST_1 // Region
         );
 
