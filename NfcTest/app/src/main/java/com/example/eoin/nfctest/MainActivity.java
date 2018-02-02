@@ -92,6 +92,38 @@ public class MainActivity extends AppCompatActivity {
             Log.e(TAG, e.getLocalizedMessage());
             showAlert(3);
         }
+		
+		try {       //  5.1) Connect to card
+            mfc.connect();
+            boolean auth = false;
+            String cardData = null;
+            // 5.2) and get the number of sectors this card has..and loop thru these sectors
+            int secCount = mfc.getSectorCount();
+            int bCount = 0;
+            int bIndex = 0;
+            for(int j = 0; j < secCount; j++){
+                // 6.1) authenticate the sector
+                auth = mfc.authenticateSectorWithKeyA(j, MifareClassic.KEY_DEFAULT);
+                if(auth){
+                    // 6.2) In each sector - get the block count
+                    bCount = mfc.getBlockCountInSector(j);
+                    bIndex = 0;
+                    for(int i = 0; i < bCount; i++){
+                        bIndex = mfc.sectorToBlock(j);
+                        // 6.3) Read the block
+                        data = mfc.readBlock(bIndex);
+                        // 7) Convert the data into a string from Hex format.
+                        Log.i(TAG, getHexString(data, data.length));
+                        bIndex++;
+                    }
+                }else{ // Authentication failed - Handle it
+
+                }
+            }
+        }catch (IOException e) {
+            Log.e(TAG, e.getLocalizedMessage());
+            showAlert(3);
+        }
     }// End of d
 
 }
