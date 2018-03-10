@@ -6,10 +6,12 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
+import android.widget.Toast;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
@@ -18,6 +20,8 @@ import java.util.HashMap;
 import java.util.List;
 
 public class deleteUser extends ListActivity {
+
+    private static final String TAG = "deleteUser";
 
     // The S3 client used for getting the list of objects in the bucket
     private AmazonS3Client s3;
@@ -42,7 +46,7 @@ public class deleteUser extends ListActivity {
 
     private void initData() {
         // Gets the default S3 client.
-        s3 = com.example.eoin.testawsapp.Util.getS3Client(deleteUser.this);
+        s3 = com.example.pcworld.filetransferapp.Util.getS3Client(deleteUser.this);
         transferRecordMaps = new ArrayList<HashMap<String, Object>>();
     }
 
@@ -103,12 +107,16 @@ public class deleteUser extends ListActivity {
         @Override
         protected Void doInBackground(Void... inputs) {
             // Queries files in the bucket from S3.
-            s3ObjList = s3.listObjects(com.example.eoin.testawsapp.Constants.BUCKET_NAME).getObjectSummaries();
+            s3ObjList = s3.listObjects(com.example.pcworld.filetransferapp.Constants.BUCKET_NAME).getObjectSummaries();
             transferRecordMaps.clear();
             for (S3ObjectSummary summary : s3ObjList) {
-                HashMap<String, Object> map = new HashMap<String, Object>();
-                map.put("key", summary.getKey());
-                transferRecordMaps.add(map);
+                String[] Username = summary.getKey().split("/");
+
+                //if(Username[0].equals("UserData")){
+                    HashMap<String, Object> map = new HashMap<String, Object>();
+                    map.put("key", summary.getKey());
+                    transferRecordMaps.add(map);
+                //}
             }
             return null;
         }

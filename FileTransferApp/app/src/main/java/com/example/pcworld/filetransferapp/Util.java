@@ -1,4 +1,4 @@
-package com.example.eoin.testawsapp;
+package com.example.pcworld.filetransferapp;
 
 /*
  * Copyright 2015 Amazon.com, Inc. or its affiliates. All Rights Reserved.
@@ -53,8 +53,8 @@ public class Util {
         if (sCredProvider == null) {
             sCredProvider = new CognitoCachingCredentialsProvider(
                     context.getApplicationContext(),
-                    com.example.eoin.testawsapp.Constants.COGNITO_POOL_ID,
-                    Regions.fromName(com.example.eoin.testawsapp.Constants.COGNITO_POOL_REGION));
+                    com.example.pcworld.filetransferapp.Constants.COGNITO_POOL_ID,
+                    Regions.fromName(com.example.pcworld.filetransferapp.Constants.COGNITO_POOL_REGION));
         }
         return sCredProvider;
     }
@@ -69,7 +69,7 @@ public class Util {
     public static AmazonS3Client getS3Client(Context context) {
         if (sS3Client == null) {
             sS3Client = new AmazonS3Client(getCredProvider(context.getApplicationContext()));
-            sS3Client.setRegion(Region.getRegion(Regions.fromName(com.example.eoin.testawsapp.Constants.BUCKET_REGION)));
+            sS3Client.setRegion(Region.getRegion(Regions.fromName(com.example.pcworld.filetransferapp.Constants.BUCKET_REGION)));
         }
         return sS3Client;
     }

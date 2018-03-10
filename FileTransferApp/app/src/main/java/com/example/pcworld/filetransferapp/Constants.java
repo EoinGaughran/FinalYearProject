@@ -1,4 +1,4 @@
-package com.example.eoin.testawsapp;
+package com.example.pcworld.filetransferapp;
 
 /*
  * Copyright 2015 Amazon.com, Inc. or its affiliates. All Rights Reserved.
@@ -22,7 +22,7 @@ public class Constants {
      * You should replace these values with your own. See the README for details
      * on what to fill in.
      */
-    public static final String COGNITO_POOL_ID = "";
+    public static final String COGNITO_POOL_ID = "eu-west-1:0e854cdc-c925-462a-a214-d58d9f16cdc3";
 
     /*
      * Region of your Cognito identity pool ID.
