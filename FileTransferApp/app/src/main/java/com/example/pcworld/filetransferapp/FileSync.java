@@ -184,7 +184,7 @@ public class FileSync extends AppCompatActivity {
         }
         //File file = new File(filePath);
         File file = new File(filePath);
-        TransferObserver observer = transferUtility.upload(com.example.pcworld.filetransferapp.Constants.BUCKET_NAME, file.getName(),
+        TransferObserver observer = transferUtility.upload(com.example.pcworld.filetransferapp.Constants.BUCKET_NAME, "UserData/" + file.getName(),
                 file);
         Toast.makeText(this, filePath + " Uploaded",
                 Toast.LENGTH_LONG).show();

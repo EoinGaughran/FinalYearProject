@@ -1,17 +1,26 @@
 package com.example.pcworld.filetransferapp;
 
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
-
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver;
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.DeleteObjectRequest;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.HashMap;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -20,6 +29,11 @@ public class MainActivity extends AppCompatActivity {
     private Button deleteUser;
     private Button viewFiles;
     private Button localFiles;
+
+    private static final int DOWNLOAD_SELECTION_REQUEST_CODE = 1;
+
+    private AmazonS3Client s3;
+    //private TransferUtility transferUtility
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +49,9 @@ public class MainActivity extends AppCompatActivity {
         viewFiles = (Button) findViewById(R.id.FileViewer);
         localFiles = (Button) findViewById(R.id.listFiles);
 
+        //transferUtility = Util.getTransferUtility(this);
+        s3 = com.example.pcworld.filetransferapp.Util.getS3Client(MainActivity.this);
+
         fileSync.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View arg0) {
@@ -47,7 +64,12 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View arg0) {
                 Intent intent = new Intent(MainActivity.this, deleteUser.class);
-                startActivity(intent);
+                startActivityForResult(intent, DOWNLOAD_SELECTION_REQUEST_CODE);
+
+                //DeleteObjectRequest(Constants.BUCKET_NAME, java.lang.String key)
+                //TransferObserver observer = transferUtility.download(Constants.BUCKET_NAME, key, file);
+
+
             }
         });
 
@@ -120,5 +142,50 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data){
+        if(requestCode == DOWNLOAD_SELECTION_REQUEST_CODE && data != null) {
+            if(resultCode == RESULT_OK ) {
+
+                String key = data.getStringExtra("key");
+                new deleteObject().execute(key);
+            }
+        }
+    }
+
+
+    @Override
+    protected void onResume(){
+        super.onResume();
+        initData();
+    }
+
+    private class deleteObject extends AsyncTask<String, Void, Void> {
+
+        private ProgressDialog dialog;
+
+        @Override
+        protected void onPreExecute() {
+            dialog = ProgressDialog.show(MainActivity.this,
+                    "Deleting",
+                    getString(R.string.please_wait));
+        }
+
+        @Override
+        protected Void doInBackground(String... key) {
+            // Queries files in the bucket from S3.
+            s3.deleteObject(new DeleteObjectRequest(Constants.BUCKET_NAME, key[0]));
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            dialog.dismiss();
+        }
+    }
+
+    public void initData() {
     }
 }

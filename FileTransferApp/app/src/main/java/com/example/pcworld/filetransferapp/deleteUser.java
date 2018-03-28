@@ -1,7 +1,9 @@
 package com.example.pcworld.filetransferapp;
 
+import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
@@ -74,9 +76,11 @@ public class deleteUser extends ListActivity {
         });
         setListAdapter(simpleAdapter);
 
+
         // When an item is selected, finish the activity and pass back the S3
         // key associated with the object selected
         getListView().setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int pos, long id) {
                 Intent intent = new Intent();
@@ -85,6 +89,8 @@ public class deleteUser extends ListActivity {
                 finish();
             }
         });
+
+
     }
 
     /**
@@ -112,11 +118,11 @@ public class deleteUser extends ListActivity {
             for (S3ObjectSummary summary : s3ObjList) {
                 String[] Username = summary.getKey().split("/");
 
-                //if(Username[0].equals("UserData")){
+                if(Username[0].equals("UserData")){
                     HashMap<String, Object> map = new HashMap<String, Object>();
                     map.put("key", summary.getKey());
                     transferRecordMaps.add(map);
-                //}
+                }
             }
             return null;
         }

@@ -25,7 +25,7 @@
             app:layout_constraintBottom_toTopOf="@+id/downloadFile"/>
 
     <Button
-            android:text="View File"
+            android:text="Load File"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:id="@+id/viewFileButton"
@@ -37,7 +37,7 @@
             app:layout_constraintLeft_toLeftOf="parent"/>
 
     <Button
-            android:text="Test"
+            android:text="Display"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:id="@+id/downloadFile"
