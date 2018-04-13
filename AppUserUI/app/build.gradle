@@ -10,7 +10,17 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+        jackOptions {
+            enabled true
+        }
     }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
     buildTypes {
         release {
             minifyEnabled false
@@ -30,5 +40,6 @@ dependencies {
     compile 'com.amazonaws:aws-android-sdk-core:2.6.+'
     compile 'com.amazonaws:aws-android-sdk-s3:2.6.+'
     compile 'com.amazonaws:aws-android-sdk-ddb:2.6.+'
+    compile 'com.jjoe64:graphview:4.2.1'
     testCompile 'junit:junit:4.12'
 }

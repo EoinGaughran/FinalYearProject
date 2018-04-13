@@ -3,6 +3,8 @@ package com.example.pcworld.appuserui;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
@@ -23,11 +25,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
-import android.widget.ArrayAdapter;
-import android.widget.AutoCompleteTextView;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.TextView;
+import android.widget.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -192,6 +190,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
     private boolean isEmailValid(String email) {
         //TODO: Replace this with your own logic
+        //return true;
         return email.contains("@");
     }
 
@@ -337,6 +336,17 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             showProgress(false);
 
             if (success) {
+
+                SharedPreferences prefs = getSharedPreferences("LoginDetails", MODE_PRIVATE);
+                SharedPreferences.Editor editor = prefs.edit();
+                editor.putBoolean("logged_in", true);
+                editor.putString("username", mEmail);
+                editor.putString("password", mPassword);
+                editor.apply();
+
+                Intent intent = new Intent();
+                intent.putExtra("key", mEmail);
+                setResult(RESULT_OK, intent);
                 finish();
             } else {
                 mPasswordView.setError(getString(R.string.error_incorrect_password));
@@ -349,6 +359,11 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             mAuthTask = null;
             showProgress(false);
         }
+    }
+    @Override
+    public void onBackPressed(){
+        Toast.makeText(LoginActivity.this, "Please Login",
+                Toast.LENGTH_LONG).show();
     }
 }
 
