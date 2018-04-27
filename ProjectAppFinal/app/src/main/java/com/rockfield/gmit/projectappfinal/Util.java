@@ -182,4 +182,74 @@ public class Util {
         mOutput.close();
         mInput.close();
     }
+
+    private static final String SQL_CREATE_ENTRIES_INFO =
+            "CREATE TABLE " + SqlLibraries.userInfoDatabase.TABLE_NAME + " (" +
+                    SqlLibraries.userInfoDatabase._ID + " INTEGER PRIMARY KEY," +
+                    SqlLibraries.userInfoDatabase.COLUMN_NFCDATA + " TEXT," +
+                    SqlLibraries.userInfoDatabase.COLUMN_TIME + " TEXT)";
+
+    private static final String SQL_DELETE_ENTRIES_INFO =
+            "DROP TABLE IF EXISTS " + SqlLibraries.userLoginDatabase.TABLE_NAME;
+
+
+
+    public static class UserDataDbHelper extends SQLiteOpenHelper {
+        // If you change the database schema, you must increment the database version.
+
+
+        public UserDataDbHelper(Context context) {
+            super(context, Constants.USER_INFO_DATABASE, null, Constants.USER_INFO_DATABASE_VERSION);
+        }
+
+        public void onCreate(SQLiteDatabase db) {
+            db.execSQL(SQL_CREATE_ENTRIES_INFO);
+        }
+        public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+            // This database is only a cache for online data, so its upgrade policy is
+            // to simply to discard the data and start over
+            db.execSQL(SQL_DELETE_ENTRIES_INFO);
+            onCreate(db);
+        }
+        public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+            onUpgrade(db, oldVersion, newVersion);
+        }
+    }
+
+    private static final String SQL_CREATE_ENTRIES_NFC =
+            "CREATE TABLE " + SqlLibraries.nfcDatabase.TABLE_NAME + " (" +
+                    SqlLibraries.nfcDatabase._ID + " INTEGER PRIMARY KEY," +
+                    SqlLibraries.nfcDatabase.COLUMN_NFC_CODE+ " TEXT," +
+                    SqlLibraries.nfcDatabase.COLUMN_NAME+ " TEXT," +
+                    SqlLibraries.nfcDatabase.COLUMN_USEBY+ " TEXT," +
+                    SqlLibraries.nfcDatabase.COLUMN_DETAILS+ " TEXT," +
+                    SqlLibraries.nfcDatabase.COLUMN_BATCH_CODE+ " TEXT," +
+                    SqlLibraries.nfcDatabase.COLUMN_RECOMMENDED_AMOUNT+ " TEXT)";
+
+    private static final String SQL_DELETE_ENTRIES_NFC =
+            "DROP TABLE IF EXISTS " + SqlLibraries.userLoginDatabase.TABLE_NAME;
+
+
+
+    public static class NfcDataDbHelper extends SQLiteOpenHelper {
+        // If you change the database schema, you must increment the database version.
+
+
+        public NfcDataDbHelper(Context context) {
+            super(context, Constants.NFC_INFO_DATABASE, null, Constants.NFC_INFO_DATABASE_VERSION);
+        }
+
+        public void onCreate(SQLiteDatabase db) {
+            db.execSQL(SQL_CREATE_ENTRIES_NFC);
+        }
+        public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+            // This database is only a cache for online data, so its upgrade policy is
+            // to simply to discard the data and start over
+            db.execSQL(SQL_DELETE_ENTRIES_NFC);
+            onCreate(db);
+        }
+        public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+            onUpgrade(db, oldVersion, newVersion);
+        }
+    }
 }

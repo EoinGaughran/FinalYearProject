@@ -29,11 +29,11 @@ public class Constants {
     public static final String USER_DATA_FILE = "/UserData";
 
     public static final String USER_INFO_DATABASE = "userInfoTable";
-    public static final int USER_INFO_DATABASE_VERSION = 1;
+    public static final int USER_INFO_DATABASE_VERSION = 2;
 
     public static final String USER_LOGIN_DATABASE = "userLoginTable";
     public static final int USER_LOGIN_DATABASE_VERSION = 1;
 
-    public static final String NFC_INFO_DATABASE = "nfcInfoTable";
-    public static final int NFC_INFO_DATABASE_VERSION = 1;
+    public static final String NFC_INFO_DATABASE = "nfcInfoDatabase";
+    public static final int NFC_INFO_DATABASE_VERSION = 3;
 }

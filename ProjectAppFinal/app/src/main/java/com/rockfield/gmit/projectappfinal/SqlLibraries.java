@@ -24,7 +24,11 @@ public class SqlLibraries {
 
     public static class nfcDatabase implements BaseColumns {
         public static final String TABLE_NAME = Constants.NFC_INFO_DATABASE;
-        public static final String COLUMN_NFC_CODE = "nfcCode";
-        public static final String COLUMN_NFC_INFO = "NFC_Info";
+        public static final String COLUMN_NFC_CODE = "nfc_code";
+        public static final String COLUMN_NAME = "name";
+        public static final String COLUMN_USEBY = "use_by";
+        public static final String COLUMN_BATCH_CODE= "batch_code";
+        public static final String COLUMN_DETAILS = "details";
+        public static final String COLUMN_RECOMMENDED_AMOUNT = "recommended";
     }
 }
