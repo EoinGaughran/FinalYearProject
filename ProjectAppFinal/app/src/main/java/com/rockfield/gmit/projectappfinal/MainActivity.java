@@ -31,7 +31,6 @@ public class MainActivity extends AppCompatActivity{
     private TransferUtility transferUtility;
 
     private Util.UserDataDbHelper mUserDataDbHelper = new Util.UserDataDbHelper(this);
-    private Util.NfcDataDbHelper mNfcDataDbHelper = new Util.NfcDataDbHelper(this);
 
     public static String nfcTagInfo = "noDataRead";
 
@@ -40,7 +39,8 @@ public class MainActivity extends AppCompatActivity{
     private static final int SIGN_IN_SUCCESSFUL = 2;
     private static final int NEW_ACCOUNT = 111;
 
-    public static final String s3NfcDatabaseKey = "UserData/NfcData.db";
+    public static final String s3NfcDatabaseKey = "ServerData/NfcData.db";
+    //public static final String s3UserDatabaseKey = "UserData/" + Util.getClientUserName() + ".db";
 
     //public FeedReaderDbHelper mDbHelper = new FeedReaderDbHelper(this);
 
@@ -135,10 +135,15 @@ public class MainActivity extends AppCompatActivity{
                 //refresh views
                 initViews();
 
-                File NFC_DATABASE_FILE = new File(getDatabasePath(Constants.USER_INFO_DATABASE).toString());
+                File NFC_DATABASE_FILE = new File(getDatabasePath(Constants.NFC_INFO_DATABASE).toString());
                 Log.i("NFC DATA FILE DOWNLOAD", "Local Directory: "+ NFC_DATABASE_FILE);
                 Log.i("NFC DATA FILE DOWNLOAD", "S3 Key: "+ s3NfcDatabaseKey);
-                TransferObserver nfcDwonloadObserver = transferUtility.download(Constants.BUCKET_NAME, s3NfcDatabaseKey, NFC_DATABASE_FILE);
+                TransferObserver nfcDownloadObserver = transferUtility.download(Constants.BUCKET_NAME, s3NfcDatabaseKey, NFC_DATABASE_FILE);
+
+                /*File USER_DATABASE_FILE = new File(getDatabasePath(Constants.USER_INFO_DATABASE).toString());
+                Log.i("NFC DATA FILE DOWNLOAD", "Local Directory: "+ USER_DATABASE_FILE);
+                Log.i("NFC DATA FILE DOWNLOAD", "S3 Key: "+ s3UserDatabaseKey);
+                TransferObserver userDataDownloadObserver = transferUtility.download(Constants.BUCKET_NAME, s3UserDatabaseKey, USER_DATABASE_FILE);*/
 
                 if (resultCode == RESULT_OK) {
 
@@ -203,38 +208,9 @@ public class MainActivity extends AppCompatActivity{
                 editor.putBoolean("logged_in", false);
                 editor.apply();
 
-                /*SQLiteDatabase db = mNfcDataDbHelper.getReadableDatabase();
+                mUserDataDbHelper.close();
+                deleteDatabase(Constants.USER_INFO_DATABASE);
 
-                TransferObserver uploadObserver =
-                        transferUtility.upload(Constants.BUCKET_NAME,
-                                s3NfcDatabaseKey,
-                                getDatabasePath(Constants.NFC_INFO_DATABASE));
-
-                uploadObserver.setTransferListener(new TransferListener() {
-
-                    @Override
-                    public void onStateChanged(int id, TransferState state) {
-                        if (TransferState.COMPLETED == state) {
-                            Toast.makeText(MainActivity.this, "Database Sync Complete",
-                                    Toast.LENGTH_LONG).show();
-                        }
-                    }
-
-                    @Override
-                    public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
-                        float percentDonef = ((float)bytesCurrent/(float)bytesTotal) * 100;
-                        int percentDone = (int)percentDonef;
-
-                        Log.d("MainActivity", "   ID:" + id + "   bytesCurrent: " + bytesCurrent + "   bytesTotal: " + bytesTotal + " " + percentDone + "%");
-                    }
-
-                    @Override
-                    public void onError(int id, Exception ex) {
-                        Toast.makeText(MainActivity.this, "upload didnt work",
-                                Toast.LENGTH_LONG).show();
-                    }
-
-                });*/
                 checkLogin();
             }
         });
@@ -244,7 +220,11 @@ public class MainActivity extends AppCompatActivity{
             public void onClick(View arg0) {
 
                 Intent intent = new Intent(MainActivity.this, MainMenuActivity.class);
+
+                //pass the directory of the userInfoDatabase to new intent
+                intent.putExtra("path", getDatabasePath(Constants.USER_INFO_DATABASE).toString());
                 startActivity(intent);
+                finish();
             }
         });
     }
@@ -367,7 +347,9 @@ public class MainActivity extends AppCompatActivity{
                 publishProgress();
 
                 NdefMessage ndefMessage = mNdef.getNdefMessage();
-                message = new String(ndefMessage.getRecords()[0].getPayload());
+
+                String [] messageSplit = new String(ndefMessage.getRecords()[1].getPayload()).split("/");
+                message = messageSplit[1];
                 Log.d(TAG, "readFromNFC: "+message);
 
                 publishProgress();
@@ -415,7 +397,9 @@ public class MainActivity extends AppCompatActivity{
 
             TextView nfcMessage = (TextView) findViewById(R.id.nfcResult);
 
-            nfcMessage.setText(message);
+            String nfcDisplay = "NFC Read: " +message;
+
+            nfcMessage.setText(nfcDisplay);
 
             nfcProgress.setVisibility(View.INVISIBLE);
             //parent.finish();

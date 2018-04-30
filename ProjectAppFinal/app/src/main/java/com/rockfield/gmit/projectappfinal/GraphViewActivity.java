@@ -1,34 +1,51 @@
 package com.rockfield.gmit.projectappfinal;
 
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Color;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.*;
 import com.jjoe64.graphview.GraphView;
-import com.jjoe64.graphview.series.BarGraphSeries;
-import com.jjoe64.graphview.series.DataPoint;
-import com.jjoe64.graphview.series.LineGraphSeries;
+import com.jjoe64.graphview.ValueDependentColor;
+import com.jjoe64.graphview.helper.StaticLabelsFormatter;
+import com.jjoe64.graphview.series.*;
+import android.app.ListActivity;
 
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 
-public class GraphViewActivity extends AppCompatActivity {
+public class GraphViewActivity extends ListActivity {
 
     private static final String userDatabaseKey = "UserData/" + Util.getClientUserName() + ".db";
     private static final String TAG = "GraphViewActivity";
+
+    private SimpleAdapter simpleAdapter;
+    private ArrayList<HashMap<String, String>>[] nfcReadDetails;
+
+    private TextView mListDetails;
+    private ListView mListView;
+    private int listChoice;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_graph_view);
 
+        mListDetails = (TextView) findViewById(R.id.listDetails);
+        //mListView = findViewById(R.layout.l);
+
         initUi();
     }
 
     public void initUi() {
+
+        final int daysTotal = getIntent().getIntExtra("amount", 7);
 
         //setup new sql library
         Util.UserDataDbHelper mUserDataDbHelper = new Util.UserDataDbHelper(this);
@@ -49,10 +66,10 @@ public class GraphViewActivity extends AppCompatActivity {
         String[] getTime = Calendar.getInstance().getTime().toString().split(" ");
         String today = getTime[0] + getTime[1] + getTime[2];
         String currentDay = today;
-        String day = today;
+        String day = currentDay;
         String[] timeRead;
 
-        int [] inputCount = new int[7];
+        int [] inputCount = new int[daysTotal + 1];
         int input = 0;
         int dayCount = 0;
         int calculateBiggest = 0;
@@ -63,53 +80,75 @@ public class GraphViewActivity extends AppCompatActivity {
         List titleNames = new ArrayList<String>();
         //HashMap<String, Object> map = new HashMap<String, Object>();
 
-        List results = new ArrayList<HashMap<String, String>>();
+        //for (int i = 0; i < daysTotal; i++) {
+        //    nfcReadDetails[i] = new ArrayList<>();
+       // }
 
-        if (!(cursor.moveToFirst()) || cursor.getCount() == 0)
+
+        nfcReadDetails  = (ArrayList<HashMap<String, String>>[])new ArrayList[daysTotal+1];
+        //ArrayList<String>[] lists = (ArrayList<String>[])new ArrayList[10];
+
+        nfcReadDetails[0] = new ArrayList<>();
+
+        if (!(cursor.moveToFirst()) || cursor.getCount() == 0) {
             Log.i("GraphSQL", "No data to read");
-
+            Toast.makeText(this, "No data to read", Toast.LENGTH_SHORT).show();
+            finish();
+        }
         else
 
         {
             Log.i("GraphSQL", "Total SQL reads: " +cursor.getCount());
 
-            cursor.moveToFirst();
+            cursor.moveToLast();
+
+            timeRead = (cursor.getString(cursor.getColumnIndexOrThrow(SqlLibraries.userInfoDatabase.COLUMN_TIME))).split(" ");
 
             while (!cursor.isClosed()) {
 
-                timeRead = (cursor.getString(cursor.getColumnIndexOrThrow(SqlLibraries.userInfoDatabase.COLUMN_TIME))).split(" ");
-                day = timeRead[0] + timeRead[1] + timeRead[2];
-
-                if (dayCount == 7) {
+                if (dayCount == daysTotal) {
 
                     cursor.close();
                     day = null;
                 }
                 else if (day.equals(currentDay)) {
 
+                    HashMap<String, String> map = new HashMap<>();
+                    map.put("details", cursor.getString(cursor.getColumnIndexOrThrow(SqlLibraries.userInfoDatabase.COLUMN_NFCDATA))+
+                            "/"+ timeRead[0] +"/"+ timeRead[1] +"/"+ timeRead[2] +"/"+ timeRead[3]);
+                    nfcReadDetails[dayCount].add(map);
+
                     //HashMap<String, String> map = new HashMap<>();
                     //map.put(day, cursor.getString(cursor.getColumnIndexOrThrow(SqlLibraries.userInfoDatabase.COLUMN_NFCDATA)));
                     //results.add(map);
-                    inputCount[input]++;
+                    inputCount[dayCount]++;
                     calculateBiggest++;
                     //itemIds.add(cursor.getLong(cursor.getColumnIndexOrThrow(SqlLibraries.userInfoDatabase._ID)));
                     //titleNames.add(cursor.getString(cursor.getColumnIndexOrThrow(SqlLibraries.userInfoDatabase.COLUMN_NFCDATA)));
                     //timeList.add(cursor.getString(cursor.getColumnIndexOrThrow(SqlLibraries.userInfoDatabase.COLUMN_TIME)));
-                    cursor.moveToNext();
+                    cursor.moveToPrevious();
+
+                    if(!cursor.isBeforeFirst()) {
+                        timeRead = (cursor.getString(cursor.getColumnIndexOrThrow(SqlLibraries.userInfoDatabase.COLUMN_TIME))).split(" ");
+                        day = timeRead[0] + timeRead[1] + timeRead[2];
+                    }
+
+                    //Log.i(TAG, "timeRead: " +day +" currentDay: " + currentDay);
                 }
 
                 else {
 
                     currentDay = day;
+                    Log.i(TAG, "Day:" +dayCount + " Reads: " + inputCount[dayCount]);
                     dayCount++;
-                    Log.i(TAG, "Next Day:" +dayCount);
+                    nfcReadDetails[dayCount] = new ArrayList<>();
                     if(calculateBiggest > biggestNumber)
                         biggestNumber = calculateBiggest;
 
                     calculateBiggest = 0;
                 }
 
-                if(cursor.isAfterLast()) {
+                if(cursor.isBeforeFirst()) {
 
                     Log.i("GraphCursor", "reached end of read before dayCount max");
                     cursor.close();
@@ -118,12 +157,13 @@ public class GraphViewActivity extends AppCompatActivity {
                         biggestNumber = calculateBiggest;
                 }
             }
-            
+
             //for(int i = 0; i < timeList.le)
 
             GraphView graph = (GraphView) findViewById(R.id.graph);
 
-            DataPoint[] points = new DataPoint[dayCount+1];
+            DataPoint [] points = new DataPoint[dayCount+1];
+            String [] labels = new String[dayCount+1];
 
             Log.i(TAG, "Number of days: " + (dayCount+1));
 
@@ -132,40 +172,130 @@ public class GraphViewActivity extends AppCompatActivity {
                 Log.i(TAG, "Day: " +(i+1));
                 Log.i(TAG, "Number of points: " + inputCount[i]);
                 points[i] = new DataPoint(i+1, inputCount[i]);
+
+                //String read[] = nfcReadDetails[i].get(0).get("details").split("/");
+                //labels[i] = read[1] + " " + read[2];
+            }
+
+            for( int i = 0; i < dayCount; i++){
+
+                String read[] = nfcReadDetails[i].get(0).get("details").split("/");
+                labels[i] = read[1] + " " + read[2];
             }
 
             BarGraphSeries<DataPoint> series = new BarGraphSeries<>(points);
             //cursor.close();
 
-        /*DataPoint[] points = new DataPoint[100];
-        for (int i = 0; i < points.length; i++) {
-            points[i] = new DataPoint(i, Math.sin(i * 0.5) * 20 * (Math.random() * 10 + 1));
-        }
-        LineGraphSeries<DataPoint> series = new LineGraphSeries<>(points);*/
+            /*DataPoint[] points = new DataPoint[100];
+            for (int i = 0; i < points.length; i++) {
+                points[i] = new DataPoint(i, Math.sin(i * 0.5) * 20 * (Math.random() * 10 + 1));
+            }
+            LineGraphSeries<DataPoint> series = new LineGraphSeries<>(points);*/
 
             // set manual X bounds
             graph.getViewport().setYAxisBoundsManual(true);
             graph.getViewport().setMinY(0);
-            graph.getViewport().setMaxY(biggestNumber + 1);
+
+            int twentyPercentGap = (int)(biggestNumber *.2);
+            if (twentyPercentGap == 0) twentyPercentGap = 1;
+
+            graph.getViewport().setMaxY(biggestNumber + twentyPercentGap);
 
             graph.getViewport().setXAxisBoundsManual(true);
             graph.getViewport().setMinX(0);
-            graph.getViewport().setMaxX(10);
+            graph.getViewport().setMaxX(5);
 
             // enable scaling and scrolling
             graph.getViewport().setScalable(true);
             graph.getViewport().setScalableY(false);
 
+            StaticLabelsFormatter staticLabelsFormatter = new StaticLabelsFormatter(graph);
+            staticLabelsFormatter.setHorizontalLabels(labels);
+                //staticLabelsFormatter.setVerticalLabels(new String[] {"low", "middle", "high"});
+            graph.getGridLabelRenderer().setLabelFormatter(staticLabelsFormatter);
+
             graph.addSeries(series);
 
-        /*GraphView graph1 = (GraphView) findViewById(R.id.graph1);
-        LineGraphSeries<DataPoint> series1 = new LineGraphSeries<>(new DataPoint[]{
-                new DataPoint(0, 1),
-                new DataPoint(1, 5),
-                new DataPoint(2, 3)
-        });
-        graph1.addSeries(series1);*/
+            series.setValueDependentColor(new ValueDependentColor<DataPoint>() {
+                @Override
+                public int get(DataPoint data) {
+                    return Color.rgb((int) data.getX()*255/4, (int) Math.abs(data.getY()*255/6), 100);
+                }
+            });
+
+            series.setOnDataPointTapListener(new OnDataPointTapListener() {
+                @Override
+                public void onTap(Series series, DataPointInterface dataPoint) {
+                    //Toast.makeText(GraphViewActivity.this, "Series1: On Data Point clicked: "+dataPoint.getX(), Toast.LENGTH_SHORT).show();
+
+                    int position = (int)dataPoint.getX()-1;
+                    String read[] = nfcReadDetails[position].get(0).get("details").split("/");
+                    String displayDay = read[1] + " " + read[2] + " " + read[3];
+                    mListDetails.setText(displayDay);
+                    initList(position);
+
+                }
+            });
+
+            series.setSpacing(50);
+
+            // draw values on top
+            series.setDrawValuesOnTop(true);
+            series.setValuesOnTopColor(Color.RED);
+            //series.setValuesOnTopSize(50);
+
+            /*GraphView graph1 = (GraphView) findViewById(R.id.graph1);
+            LineGraphSeries<DataPoint> series1 = new LineGraphSeries<>(new DataPoint[]{
+                    new DataPoint(0, 1),
+                    new DataPoint(1, 5),
+                    new DataPoint(2, 3)
+            });
+            graph1.addSeries(series1);*/
+
         }
+    }
+
+    public void initList(int choice){
+
+        listChoice = choice;
+
+        simpleAdapter = new SimpleAdapter(this, nfcReadDetails[choice],
+                R.layout.list_items, new String[] {
+                "details"
+        },
+                new int[] {
+                        R.id.details
+                });
+        simpleAdapter.setViewBinder(new SimpleAdapter.ViewBinder() {
+            @Override
+            public boolean setViewValue(View view, Object data,
+                                        String textRepresentation) {
+                switch (view.getId()) {
+                    case R.id.details:
+                        TextView fileName = (TextView) view;
+                        fileName.setText((String) data);
+                        return true;
+                }
+                return false;
+            }
+        });
+        setListAdapter(simpleAdapter);
+
+
+        // When an item is selected, finish the activity and pass back the S3
+        // key associated with the object selected
+        getListView().setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int pos, long id) {
+                //Intent intent = new Intent();
+                //intent.putExtra("key", (String) nfcReadDetails[listChoice].get(pos).get("details"));
+                //setResult(RESULT_OK, intent);
+                //finish();
+                Log.i(TAG, "Position" + pos);
+                Toast.makeText(GraphViewActivity.this, nfcReadDetails[listChoice].get(pos).get("details"), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     @Override

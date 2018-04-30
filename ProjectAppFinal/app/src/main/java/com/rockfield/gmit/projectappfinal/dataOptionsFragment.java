@@ -159,9 +159,8 @@ public class dataOptionsFragment extends Fragment implements View.OnClickListene
         @Override
         protected Void doInBackground(Void... keys) {
 
-
-
             //sS3Client.deleteObject(new DeleteObjectRequest(Constants.BUCKET_NAME, s3FileKey));
+
 
             TransferObserver uploadObserver =
                     transferUtility.upload(Constants.BUCKET_NAME,
@@ -185,8 +184,8 @@ public class dataOptionsFragment extends Fragment implements View.OnClickListene
 
                 @Override
                 public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
-                    float percentDonef = ((float)bytesCurrent/(float)bytesTotal) * 100;
-                    int percentDone = (int)percentDonef;
+                    float percentDonef = ((float) bytesCurrent / (float) bytesTotal) * 100;
+                    int percentDone = (int) percentDonef;
 
                     Log.d(TAG, "   ID:" + id + "   bytesCurrent: " + bytesCurrent + "   bytesTotal: " + bytesTotal + " " + percentDone + "%");
                 }
@@ -197,6 +196,7 @@ public class dataOptionsFragment extends Fragment implements View.OnClickListene
                 }
 
             });
+
             return null;
         }
 

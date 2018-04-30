@@ -43,7 +43,7 @@ import static android.Manifest.permission.READ_CONTACTS;
 public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<Cursor> {
 
     private TransferUtility transferUtility;
-    private final String s3FileKey = "UserData/UserAccounts.db";
+    private final String s3FileKey = "ServerData/UserAccounts.db";
     private FeedReaderDbHelper mDbHelper = new FeedReaderDbHelper(LoginActivity.this);
 
 

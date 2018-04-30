@@ -1,6 +1,7 @@
 package com.rockfield.gmit.projectappfinal;
 
 import android.content.Context;
+import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Bundle;
@@ -17,7 +18,6 @@ import java.io.File;
 public class MainMenuActivity extends AppCompatActivity {
 
     private TextView mTextMessage;
-    private TestFragment testFragment;
 
     //private Util.UserDataDbHelper UserDatabase = new Util.UserDataDbHelper(this);
     //private SQLiteDatabase db = UserDatabase.getReadableDatabase();
@@ -31,6 +31,8 @@ public class MainMenuActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_menu);
 
+        final String userDatabasePath = getIntent().getStringExtra("path");
+
         mTextMessage = (TextView) findViewById(R.id.message);
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
         //navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
@@ -42,13 +44,13 @@ public class MainMenuActivity extends AppCompatActivity {
                         Fragment selectedFragment = null;
                         switch (item.getItemId()) {
                             case R.id.navigation_home:
-                                selectedFragment = dataOptionsFragment.newInstance("test", username);
+                                selectedFragment = dataOptionsFragment.newInstance(userDatabasePath, username);
                                 break;
                             case R.id.navigation_dashboard:
                                 selectedFragment = HistoryFragment.newInstance("History", "Fragment");
                                 break;
                             case R.id.navigation_notifications:
-                                selectedFragment = TestFragment.newInstance("Hello", "World");
+                                selectedFragment = AlarmFragment.newInstance("Alarm", "Fragment");
                                 break;
                         }
                         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
@@ -60,7 +62,15 @@ public class MainMenuActivity extends AppCompatActivity {
 
         //Manually displaying the first fragment - one time only
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        transaction.replace(R.id.content, dataOptionsFragment.newInstance("share", "button sware"));
+        transaction.replace(R.id.content, dataOptionsFragment.newInstance(userDatabasePath, username));
         transaction.commit();
+    }
+
+    @Override
+    public void onBackPressed(){
+
+        Intent intent = new Intent(MainMenuActivity.this, MainActivity.class);
+        startActivity(intent);
+        finish();
     }
 }

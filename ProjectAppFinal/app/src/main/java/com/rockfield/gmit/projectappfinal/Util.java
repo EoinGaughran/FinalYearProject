@@ -190,7 +190,7 @@ public class Util {
                     SqlLibraries.userInfoDatabase.COLUMN_TIME + " TEXT)";
 
     private static final String SQL_DELETE_ENTRIES_INFO =
-            "DROP TABLE IF EXISTS " + SqlLibraries.userLoginDatabase.TABLE_NAME;
+            "DROP TABLE IF EXISTS " + SqlLibraries.userInfoDatabase.TABLE_NAME;
 
 
 
@@ -227,7 +227,7 @@ public class Util {
                     SqlLibraries.nfcDatabase.COLUMN_RECOMMENDED_AMOUNT+ " TEXT)";
 
     private static final String SQL_DELETE_ENTRIES_NFC =
-            "DROP TABLE IF EXISTS " + SqlLibraries.userLoginDatabase.TABLE_NAME;
+            "DROP TABLE IF EXISTS " + SqlLibraries.nfcDatabase.TABLE_NAME;
 
 
 

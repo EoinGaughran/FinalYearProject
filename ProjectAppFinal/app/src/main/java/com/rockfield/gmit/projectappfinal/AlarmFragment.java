@@ -1,16 +1,30 @@
 package com.rockfield.gmit.projectappfinal;
 
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.TextView;
 
 
-
-public class TestFragment extends Fragment {
+/**
+ * A simple {@link //Fragment} subclass.
+ * Activities that contain this fragment must implement the
+ * {@link //AlarmFragment.OnFragmentInteractionListener} interface
+ * to handle interaction events.
+ * Use the {@link// AlarmFragment#newInstance} factory method to
+ * create an instance of this fragment.
+ */
+public class AlarmFragment extends Fragment implements View.OnClickListener{
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
@@ -20,9 +34,13 @@ public class TestFragment extends Fragment {
     private String mParam1;
     private String mParam2;
 
+    private Button mSetAlarm;
+
+    private static final String TAG = "AlarmActivity";
+
     //private OnFragmentInteractionListener mListener;
 
-    public TestFragment() {
+    public AlarmFragment() {
         // Required empty public constructor
     }
 
@@ -32,11 +50,11 @@ public class TestFragment extends Fragment {
      *
      * @param param1 Parameter 1.
      * @param param2 Parameter 2.
-     * @return A new instance of fragment TestFragment.
+     * @return A new instance of fragment AlarmFragment.
      */
     // TODO: Rename and change types and number of parameters
-    public static TestFragment newInstance(String param1, String param2) {
-        TestFragment fragment = new TestFragment();
+    public static AlarmFragment newInstance(String param1, String param2) {
+        AlarmFragment fragment = new AlarmFragment();
         Bundle args = new Bundle();
         args.putString(ARG_PARAM1, param1);
         args.putString(ARG_PARAM2, param2);
@@ -56,8 +74,49 @@ public class TestFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_alarm, container, false);
+
+        mSetAlarm = view.findViewById(R.id.setAlarm);
+
+        mSetAlarm.setOnClickListener(this);
+
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_test, container, false);
+        return view;
+    }
+
+    @Override
+    public void onClick(View view) {
+
+        Intent intentNotif = new Intent(getActivity(), MainActivity.class);
+        intentNotif.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        PendingIntent pendingIntent = PendingIntent.getActivity(getActivity(), 123, intentNotif, 0);
+
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(getActivity())
+                .setSmallIcon(R.drawable.ic_nfc)
+                .setContentTitle("Testing Notification")
+                .setContentText("Test test")
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true);
+
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getActivity());
+
+        switch (view.getId()) {
+            case R.id.setAlarm:
+
+                Log.i(TAG, "onClick:" + view.getId());
+
+                // Create an explicit intent for an Activity in your app
+
+                // notificationId is a unique int for each notification that you must define
+                notificationManager.notify(123, mBuilder.build());
+                break;
+            /*case R.id.pastSevenDays:
+
+                startActivity(intent);
+                Log.i("HistoryFragment", "onClick:" + view.getId());
+                break;*/
+        }
     }
 
     // TODO: Rename method, update argument and hook method into UI event
@@ -65,9 +124,9 @@ public class TestFragment extends Fragment {
         if (mListener != null) {
             mListener.onFragmentInteraction(uri);
         }
-    }*/
+    }
 
-    /*@Override
+    @Override
     public void onAttach(Context context) {
         super.onAttach(context);
         if (context instanceof OnFragmentInteractionListener) {
