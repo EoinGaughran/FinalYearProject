@@ -32,6 +32,8 @@ public class MainMenuActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main_menu);
 
         final String userDatabasePath = getIntent().getStringExtra("path");
+        final String nfcDatabasePath = getIntent().getStringExtra("nfcDatabasePath");
+        final String s3UserDatabaseKey = "UserData/"+username+".db";
 
         mTextMessage = (TextView) findViewById(R.id.message);
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
@@ -44,7 +46,7 @@ public class MainMenuActivity extends AppCompatActivity {
                         Fragment selectedFragment = null;
                         switch (item.getItemId()) {
                             case R.id.navigation_home:
-                                selectedFragment = dataOptionsFragment.newInstance(userDatabasePath, username);
+                                selectedFragment = dataOptionsFragment.newInstance(userDatabasePath, username, s3UserDatabaseKey, nfcDatabasePath);
                                 break;
                             case R.id.navigation_dashboard:
                                 selectedFragment = HistoryFragment.newInstance("History", "Fragment");
@@ -62,7 +64,8 @@ public class MainMenuActivity extends AppCompatActivity {
 
         //Manually displaying the first fragment - one time only
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        transaction.replace(R.id.content, dataOptionsFragment.newInstance(userDatabasePath, username));
+        transaction.replace(R.id.content, dataOptionsFragment.newInstance(
+                userDatabasePath, username, s3UserDatabaseKey, nfcDatabasePath));
         transaction.commit();
     }
 

@@ -1,9 +1,12 @@
 package com.rockfield.gmit.projectappfinal;
 
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.*;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.nfc.*;
 import android.app.PendingIntent;
 import android.nfc.tech.Ndef;
@@ -40,6 +43,7 @@ public class MainActivity extends AppCompatActivity{
     private static final int NEW_ACCOUNT = 111;
 
     public static final String s3NfcDatabaseKey = "ServerData/NfcData.db";
+    public static String s3UserDatabaseKey;
     //public static final String s3UserDatabaseKey = "UserData/" + Util.getClientUserName() + ".db";
 
     //public FeedReaderDbHelper mDbHelper = new FeedReaderDbHelper(this);
@@ -66,6 +70,8 @@ public class MainActivity extends AppCompatActivity{
 
             //download the users database
         }
+
+        s3UserDatabaseKey = "UserData/" + Util.getClientUserName() + ".db";
     }
 
     private boolean isUserLoggedIn() {
@@ -74,7 +80,7 @@ public class MainActivity extends AppCompatActivity{
 
         if (prefs.getBoolean("logged_in", false)) { //user logged in before
             Util.setClientUserName(prefs.getString("username", "NoUsername"));
-            Util.setUserPassword(prefs.getString("password", "NoPassword"));
+            //Util.setUserPassword(prefs.getString("password", "NoPassword"));
             return true;
 
         } else
@@ -178,7 +184,7 @@ public class MainActivity extends AppCompatActivity{
             Toast.makeText(this, "Login Info Failed", Toast.LENGTH_SHORT).show();
     }
 
-    private void initViews() {
+    public void initViews() {
 
         /*mEtMessage = (EditText) findViewById(R.id.et_message);
         mBtWrite = (Button) findViewById(R.id.btn_write);
@@ -203,15 +209,77 @@ public class MainActivity extends AppCompatActivity{
             @Override
             public void onClick(View arg0) {
 
-                SharedPreferences prefs = getSharedPreferences("LoginDetails", MODE_PRIVATE);
-                SharedPreferences.Editor editor = prefs.edit();
-                editor.putBoolean("logged_in", false);
-                editor.apply();
+                final File DATABASE_FILE = new File(getDatabasePath(Constants.USER_INFO_DATABASE).toString());
 
-                mUserDataDbHelper.close();
-                deleteDatabase(Constants.USER_INFO_DATABASE);
+                DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        switch (which){
+                            case DialogInterface.BUTTON_POSITIVE:
 
-                checkLogin();
+                                if(isNetworkAvailable()){
+
+                                    final ProgressDialog progressDialog = ProgressDialog.show(MainActivity.this,
+                                            "Uploading",
+                                            getString(R.string.please_wait));
+
+                                    progressDialog.show();
+
+                                    TransferObserver uploadObserver =
+                                            transferUtility.upload(Constants.BUCKET_NAME,
+                                                    s3UserDatabaseKey,
+                                                    DATABASE_FILE);
+
+                                    uploadObserver.setTransferListener(new TransferListener() {
+
+                                        private static final String TAG = "logoutUploadDatabase";
+
+                                        @Override
+                                        public void onStateChanged(int id, TransferState state) {
+                                            if (TransferState.COMPLETED == state) {
+
+                                                Log.i(TAG, "Upload Successful");
+
+                                                Toast.makeText(MainActivity.this, "Database Sync Successful",
+                                                        Toast.LENGTH_LONG).show();
+                                            }
+                                        }
+
+                                        @Override
+                                        public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
+                                            float percentDonef = ((float) bytesCurrent / (float) bytesTotal) * 100;
+                                            int percentDone = (int) percentDonef;
+
+                                            Log.d(TAG, "   ID:" + id + "   bytesCurrent: " + bytesCurrent + "   bytesTotal: " + bytesTotal + " " + percentDone + "%");
+                                            if(percentDone == 100) {
+
+                                                progressDialog.dismiss();
+                                                logOut();
+                                            }
+                                        }
+
+                                        @Override
+                                        public void onError(int id, Exception ex) {
+                                            Log.i(TAG, "Upload Failed");
+                                        }
+
+                                    });
+                                }
+                                else Toast.makeText(MainActivity.this, "Please enable your internet connection", Toast.LENGTH_SHORT).show();
+
+                                break;
+
+                            case DialogInterface.BUTTON_NEGATIVE:
+
+                                logOut();
+                                break;
+                        }
+                    }
+                };
+
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setMessage("Do you want to sync your database before logging out?").setPositiveButton("Yes", dialogClickListener)
+                        .setNegativeButton("No", dialogClickListener).show();
             }
         });
 
@@ -223,6 +291,7 @@ public class MainActivity extends AppCompatActivity{
 
                 //pass the directory of the userInfoDatabase to new intent
                 intent.putExtra("path", getDatabasePath(Constants.USER_INFO_DATABASE).toString());
+                intent.putExtra("nfcDatabasePath", getDatabasePath(Constants.NFC_INFO_DATABASE).toString());
                 startActivity(intent);
                 finish();
             }
@@ -232,6 +301,26 @@ public class MainActivity extends AppCompatActivity{
     private void initNFC(){
 
         mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
+    }
+
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+    }
+
+    private void logOut(){
+
+        SharedPreferences prefs = getSharedPreferences("LoginDetails", MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putBoolean("logged_in", false);
+        editor.apply();
+
+        mUserDataDbHelper.close();
+        deleteDatabase(Constants.USER_INFO_DATABASE);
+
+        checkLogin();
     }
 
     @Override

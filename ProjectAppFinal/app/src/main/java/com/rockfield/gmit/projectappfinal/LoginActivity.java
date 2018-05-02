@@ -10,6 +10,8 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -96,8 +98,9 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             }
         });
 
-        Button mEmailSignInButton = (Button) findViewById(R.id.email_sign_in_button);
+        Button mEmailSignInButton = (Button) findViewById(R.id.createAlarm);
         Button mCreateAccountButton = (Button) findViewById(R.id.createAccount);
+
         mEmailSignInButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -202,161 +205,164 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         makeNewAccount = request;
 
-        if (mAuthTask != null) {
-            return;
+        if (!isNetworkAvailable()) {
+
+            Toast.makeText(LoginActivity.this,
+                    "Please enable your internet connection", Toast.LENGTH_SHORT).show();
         }
+        else
+        {
+            if (mAuthTask != null) {
+                return;
+            }
 
-        // Reset errors.
-        mEmailView.setError(null);
-        mPasswordView.setError(null);
+            // Reset errors.
+            mEmailView.setError(null);
+            mPasswordView.setError(null);
 
-        // Store values at the time of the login attempt.
-        final String email = mEmailView.getText().toString();
-        final String password = mPasswordView.getText().toString();
+            // Store values at the time of the login attempt.
+            final String email = mEmailView.getText().toString();
+            final String password = mPasswordView.getText().toString();
 
-        boolean cancel = false;
-        View focusView = null;
+            boolean cancel = false;
+            View focusView = null;
 
-        // Check if password is present
-        if (TextUtils.isEmpty(password)) {
-            mPasswordView.setError(getString(R.string.error_field_required));
-            focusView = mPasswordView;
-            cancel = true;
-        }
+            // Check if password is present
+            if (TextUtils.isEmpty(password)) {
+                mPasswordView.setError(getString(R.string.error_field_required));
+                focusView = mPasswordView;
+                cancel = true;
+            }
 
-        // Check for a valid password, if the user entered one.
-        else if (!isPasswordValid(password)) {
-            mPasswordView.setError(getString(R.string.error_invalid_password));
-            focusView = mPasswordView;
-            cancel = true;
-        }
-        else if(!password.matches("[a-zA-Z0-9]*")){
+            // Check for a valid password, if the user entered one.
+            else if (!isPasswordValid(password)) {
+                mPasswordView.setError(getString(R.string.error_invalid_password));
+                focusView = mPasswordView;
+                cancel = true;
+            } else if (!password.matches("[a-zA-Z0-9]*")) {
 
-            mPasswordView.setError(getString(R.string.error_numbers_letters_only));
-            focusView = mPasswordView;
-            cancel = true;
-        }
+                mPasswordView.setError(getString(R.string.error_numbers_letters_only));
+                focusView = mPasswordView;
+                cancel = true;
+            }
 
-        // Check for a valid email address.
-        if (TextUtils.isEmpty(email)) {
-            mEmailView.setError(getString(R.string.error_field_required));
-            focusView = mEmailView;
-            cancel = true;
-        } else if (!isEmailValid(email)) {
-            mEmailView.setError(getString(R.string.error_invalid_username));
-            focusView = mEmailView;
-            cancel = true;
-        }
-        else if (!email.matches("[a-zA-Z0-9]*")) {
-            mEmailView.setError(getString(R.string.error_numbers_letters_only));
-            focusView = mEmailView;
-            cancel = true;
-        }
+            // Check for a valid email address.
+            if (TextUtils.isEmpty(email)) {
+                mEmailView.setError(getString(R.string.error_field_required));
+                focusView = mEmailView;
+                cancel = true;
+            } else if (!isEmailValid(email)) {
+                mEmailView.setError(getString(R.string.error_invalid_username));
+                focusView = mEmailView;
+                cancel = true;
+            } else if (!email.matches("[a-zA-Z0-9]*")) {
+                mEmailView.setError(getString(R.string.error_numbers_letters_only));
+                focusView = mEmailView;
+                cancel = true;
+            }
 
-        if (cancel) {
-            // There was an error; don't attempt login and focus the first
-            // form field with an error.
-            focusView.requestFocus();
-        } else {
-            // Show a progress spinner, and kick off a background task to
-            // perform the user login attempt.
+            if (cancel) {
+                // There was an error; don't attempt login and focus the first
+                // form field with an error.
+                focusView.requestFocus();
+            } else {
+                // Show a progress spinner, and kick off a background task to
+                // perform the user login attempt.
 
-            File DATABASE_FILE = new File(getDatabasePath(Constants.USER_LOGIN_DATABASE).toString());
-            Log.i("S3 DATA FILE DOWNLOAD", "Local Directory: "+ DATABASE_FILE);
-            Log.i("S3 DATA FILE DOWNLOAD", "S3 Key: "+ s3FileKey);
-            TransferObserver observer = transferUtility.download(Constants.BUCKET_NAME, s3FileKey, DATABASE_FILE);
+                File DATABASE_FILE = new File(getDatabasePath(Constants.USER_LOGIN_DATABASE).toString());
+                Log.i("S3 DATA FILE DOWNLOAD", "Local Directory: " + DATABASE_FILE);
+                Log.i("S3 DATA FILE DOWNLOAD", "S3 Key: " + s3FileKey);
+                TransferObserver observer = transferUtility.download(Constants.BUCKET_NAME, s3FileKey, DATABASE_FILE);
 
-            observer.setTransferListener(new TransferListener() {
+                observer.setTransferListener(new TransferListener() {
 
-                //private final String mEmail = email;
-                //private final String mPassword = password;
-                private static final String TAG = "DownloadLoginDatabase";
+                    //private final String mEmail = email;
+                    //private final String mPassword = password;
+                    private static final String TAG = "DownloadLoginDatabase";
 
-                @Override
-                public void onStateChanged(int id, TransferState state) {
-                    if (TransferState.COMPLETED == state) {
-                        showProgress(true);
+                    @Override
+                    public void onStateChanged(int id, TransferState state) {
+                        if (TransferState.COMPLETED == state) {
+                            showProgress(true);
 
-                        if(makeNewAccount){
+                            if (makeNewAccount) {
 
-                            String TAG = "CreateAccount";
+                                String TAG = "CreateAccount";
 
-                            Log.i(TAG, "Database Download Successful");
+                                Log.i(TAG, "Database Download Successful");
 
 
-                            SQLiteDatabase db = mDbHelper.getReadableDatabase();
+                                SQLiteDatabase db = mDbHelper.getReadableDatabase();
 
-                            String[] projection = {
-                                    BaseColumns._ID,
-                                    SqlLibraries.userLoginDatabase.COLUMN_PASSWORD,
-                                    SqlLibraries.userLoginDatabase.COLUMN_LASTLOGOUT,
-                                    SqlLibraries.userLoginDatabase.COLUMN_USERNAME
-                            };
+                                String[] projection = {
+                                        BaseColumns._ID,
+                                        SqlLibraries.userLoginDatabase.COLUMN_PASSWORD,
+                                        SqlLibraries.userLoginDatabase.COLUMN_LASTLOGOUT,
+                                        SqlLibraries.userLoginDatabase.COLUMN_USERNAME
+                                };
 
-                            // Filter results WHERE "title" = 'My Title'
+                                // Filter results WHERE "title" = 'My Title'
 
-                            String selection = SqlLibraries.userLoginDatabase.COLUMN_USERNAME + " = ?";
-                            String[] selectionArgs = { email };
+                                String selection = SqlLibraries.userLoginDatabase.COLUMN_USERNAME + " = ?";
+                                String[] selectionArgs = {email};
 
-                            // How you want the results sorted in the resulting Cursor
-                            String sortOrder =
-                                    SqlLibraries.userLoginDatabase.COLUMN_PASSWORD + " DESC";
+                                // How you want the results sorted in the resulting Cursor
+                                String sortOrder =
+                                        SqlLibraries.userLoginDatabase.COLUMN_PASSWORD + " DESC";
 
-                            Cursor cursor = db.query(
-                                    SqlLibraries.userLoginDatabase.TABLE_NAME,   // The table to query
-                                    projection,             // The array of columns to return (pass null to get all)
-                                    selection,              // The columns for the WHERE clause
-                                    selectionArgs,          // The values for the WHERE clause
-                                    null,                   // don't group the rows
-                                    null,                   // don't filter by row groups
-                                    sortOrder               // The sort order
-                            );
+                                Cursor cursor = db.query(
+                                        SqlLibraries.userLoginDatabase.TABLE_NAME,   // The table to query
+                                        projection,             // The array of columns to return (pass null to get all)
+                                        selection,              // The columns for the WHERE clause
+                                        selectionArgs,          // The values for the WHERE clause
+                                        null,                   // don't group the rows
+                                        null,                   // don't filter by row groups
+                                        sortOrder               // The sort order
+                                );
 
-                            if(!(cursor.moveToFirst()) || cursor.getCount() == 0) {
+                                if (!(cursor.moveToFirst()) || cursor.getCount() == 0) {
 
-                                db.close();
+                                    db.close();
 
-                                Log.i("CreateAccountCheck", "Account Doesnt Exist");
+                                    Log.i("CreateAccountCheck", "Account Doesnt Exist");
 
-                                new createAccountTask(email, password).execute();
+                                    new createAccountTask(email, password).execute();
+                                } else {
+
+                                    mPasswordView.setError("Account Already Exists");
+                                    mPasswordView.requestFocus();
+                                    showProgress(false);
+
+                                    mDbHelper.close();
+                                    db.close();
+                                    deleteDatabase(Constants.USER_LOGIN_DATABASE);
+                                }
+
+                                cursor.close();
+
+                            } else {
+
+                                mAuthTask = new UserLoginTask(email, password);
+                                mAuthTask.execute((Void) null);
                             }
-                            else{
-
-                                mPasswordView.setError("Account Already Exists");
-                                mPasswordView.requestFocus();
-                                showProgress(false);
-
-                                mDbHelper.close();
-                                db.close();
-                                deleteDatabase(Constants.USER_LOGIN_DATABASE);
-                            }
-
-                            cursor.close();
-
-                        }
-                        else {
-
-                            mAuthTask = new UserLoginTask(email, password);
-                            mAuthTask.execute((Void) null);
                         }
                     }
-                }
 
-                @Override
-                public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
-                    float percentDonef = ((float)bytesCurrent/(float)bytesTotal) * 100;
-                    int percentDone = (int)percentDonef;
+                    @Override
+                    public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
+                        float percentDonef = ((float) bytesCurrent / (float) bytesTotal) * 100;
+                        int percentDone = (int) percentDonef;
 
-                    Log.d(TAG, "   ID:" + id + "   bytesCurrent: " + bytesCurrent + "   bytesTotal: " + bytesTotal + " " + percentDone + "%");
-                }
+                        Log.d(TAG, "   ID:" + id + "   bytesCurrent: " + bytesCurrent + "   bytesTotal: " + bytesTotal + " " + percentDone + "%");
+                    }
 
-                @Override
-                public void onError(int id, Exception ex) {
-                    Log.i(TAG, "Download Failed");
-                    Toast.makeText(LoginActivity.this, "DOWNLOAD FAILED: Check your internet connection",
-                            Toast.LENGTH_LONG).show();
-                }
-            });
+                    @Override
+                    public void onError(int id, Exception ex) {
+                        Log.i(TAG, "Download Failed");
+                        Toast.makeText(LoginActivity.this, "DOWNLOAD FAILED: Check your internet connection",
+                                Toast.LENGTH_LONG).show();
+                    }
+                });
 
             /*try {
                 Thread.sleep(5000);
@@ -364,6 +370,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
             }*/
 
+            }
         }
     }
 
@@ -562,6 +569,13 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         int ADDRESS = 0;
         int IS_PRIMARY = 1;
+    }
+
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
     /**

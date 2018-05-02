@@ -4,6 +4,8 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
+import android.provider.BaseColumns;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -23,14 +25,18 @@ import java.util.List;
 public class GraphViewActivity extends ListActivity {
 
     private static final String userDatabaseKey = "UserData/" + Util.getClientUserName() + ".db";
+    private Util.NfcDataDbHelper nfcDataDbHelper = new Util.NfcDataDbHelper(GraphViewActivity.this);
     private static final String TAG = "GraphViewActivity";
 
     private SimpleAdapter simpleAdapter;
     private ArrayList<HashMap<String, String>>[] nfcReadDetails;
+    //private ArrayList<HashMap<String, String>> passDataToFragment;
 
     private TextView mListDetails;
     private ListView mListView;
     private int listChoice;
+
+    private String day, month, year, time, name, useBy, details, batchCode, recommendations;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -274,6 +280,7 @@ public class GraphViewActivity extends ListActivity {
                     case R.id.details:
                         TextView fileName = (TextView) view;
                         fileName.setText((String) data);
+
                         return true;
                 }
                 return false;
@@ -288,12 +295,74 @@ public class GraphViewActivity extends ListActivity {
 
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int pos, long id) {
-                //Intent intent = new Intent();
-                //intent.putExtra("key", (String) nfcReadDetails[listChoice].get(pos).get("details"));
-                //setResult(RESULT_OK, intent);
-                //finish();
-                Log.i(TAG, "Position" + pos);
-                Toast.makeText(GraphViewActivity.this, nfcReadDetails[listChoice].get(pos).get("details"), Toast.LENGTH_SHORT).show();
+
+                String nfcDetails[] = nfcReadDetails[listChoice].get(pos).get("details").split("/");
+
+                SQLiteDatabase db = nfcDataDbHelper.getReadableDatabase();
+
+                String[] projection = {
+                        BaseColumns._ID,
+                        SqlLibraries.nfcDatabase.COLUMN_NFC_CODE,
+                        SqlLibraries.nfcDatabase.COLUMN_NAME,
+                        SqlLibraries.nfcDatabase.COLUMN_USEBY,
+                        SqlLibraries.nfcDatabase.COLUMN_DETAILS,
+                        SqlLibraries.nfcDatabase.COLUMN_BATCH_CODE,
+                        SqlLibraries.nfcDatabase.COLUMN_RECOMMENDED_AMOUNT
+                };
+
+                // Filter results WHERE "title" = 'My Title'
+
+                String selection = SqlLibraries.nfcDatabase.COLUMN_NFC_CODE + " = ?";
+
+                //Filter the nfcCode column with the nfc code we read from the choice in the list
+                String[] selectionArgs = { nfcDetails[0] };
+
+                // How you want the results sorted in the resulting Cursor
+                String sortOrder =
+                        SqlLibraries.nfcDatabase.COLUMN_NFC_CODE + " DESC";
+
+                Cursor cursor = db.query(
+                        SqlLibraries.nfcDatabase.TABLE_NAME,   // The table to query
+                        projection,             // The array of columns to return (pass null to get all)
+                        selection,              // The columns for the WHERE clause
+                        selectionArgs,          // The values for the WHERE clause
+                        null,                   // don't group the rows
+                        null,                   // don't filter by row groups
+                        sortOrder               // The sort order
+                );
+
+                if(!(cursor.moveToFirst()) || cursor.getCount() == 0) {
+                    Log.i(TAG, "Error: Nfc code \""+nfcDetails[0]+"\" isnt in the NfcDatabase");
+                    Toast.makeText(GraphViewActivity.this, "Please update your Medicine Library", Toast.LENGTH_SHORT).show();
+
+                }
+                else {
+
+                    String[] passDataToFragment = new String[6];
+
+                    passDataToFragment[0] = cursor.getString(cursor.getColumnIndexOrThrow(SqlLibraries.nfcDatabase.COLUMN_NAME));
+                    passDataToFragment[1] = cursor.getString(cursor.getColumnIndexOrThrow(SqlLibraries.nfcDatabase.COLUMN_USEBY));
+                    passDataToFragment[2] = cursor.getString(cursor.getColumnIndexOrThrow(SqlLibraries.nfcDatabase.COLUMN_DETAILS));
+                    passDataToFragment[3] = cursor.getString(cursor.getColumnIndexOrThrow(SqlLibraries.nfcDatabase.COLUMN_BATCH_CODE));
+                    passDataToFragment[4] = cursor.getString(cursor.getColumnIndexOrThrow(SqlLibraries.nfcDatabase.COLUMN_RECOMMENDED_AMOUNT));
+                    passDataToFragment[5] = cursor.getString(cursor.getColumnIndexOrThrow(SqlLibraries.nfcDatabase.COLUMN_NFC_CODE));
+
+                    Log.i(TAG, "Position" + pos);
+
+                    cursor.close();
+
+                    Intent intent = new Intent(GraphViewActivity.this, NfcDetailsActivity.class);
+                    intent.putExtra("nfcReadDetails", nfcDetails);
+                    intent.putExtra("nfcDatabaseDetails", passDataToFragment);
+                    startActivity(intent);
+
+                /*passDataToFragment = new ArrayList<>();
+                HashMap<String, String> map = new HashMap<>();
+                map.put("details",
+                passDataToFragment.add(map);*/
+                }
+
+
             }
         });
     }
