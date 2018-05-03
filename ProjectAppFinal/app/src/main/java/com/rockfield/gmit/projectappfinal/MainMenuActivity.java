@@ -19,11 +19,6 @@ public class MainMenuActivity extends AppCompatActivity {
 
     private TextView mTextMessage;
 
-    //private Util.UserDataDbHelper UserDatabase = new Util.UserDataDbHelper(this);
-    //private SQLiteDatabase db = UserDatabase.getReadableDatabase();
-
-    //private String databaseFilePath = getDatabasePath(Constants.USER_INFO_DATABASE).toString();
-
     private String username = Util.getClientUserName();
 
     @Override
@@ -37,7 +32,6 @@ public class MainMenuActivity extends AppCompatActivity {
 
         mTextMessage = (TextView) findViewById(R.id.message);
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
-        //navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
 
         navigation.setOnNavigationItemSelectedListener
                 (new BottomNavigationView.OnNavigationItemSelectedListener() {

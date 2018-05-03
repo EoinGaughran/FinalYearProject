@@ -3,7 +3,6 @@ package com.rockfield.gmit.projectappfinal;
 import android.app.*;
 import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.support.v4.app.Fragment;
@@ -17,47 +16,26 @@ import android.widget.*;
 
 import java.util.Calendar;
 
-
-/**
- * A simple {@link //Fragment} subclass.
- * Activities that contain this fragment must implement the
- * {@link //AlarmFragment.OnFragmentInteractionListener} interface
- * to handle interaction events.
- * Use the {@link// AlarmFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
 public class AlarmFragment extends Fragment implements View.OnClickListener{
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
+
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
 
-    // TODO: Rename and change types of parameters
     private String mParam1;
     private String mParam2;
 
     private Button mSetAlarm;
+    private Button mNotificationExample;
 
     private static final String TAG = "AlarmActivity";
 
     private int hour, minute, day, month, year;
     private int alarmHour, alarmMinute, alarmDay, alarmMonth, alarmYear;
 
-    //private OnFragmentInteractionListener mListener;
-
     public AlarmFragment() {
         // Required empty public constructor
     }
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment AlarmFragment.
-     */
-    // TODO: Rename and change types and number of parameters
     public static AlarmFragment newInstance(String param1, String param2) {
         AlarmFragment fragment = new AlarmFragment();
         Bundle args = new Bundle();
@@ -82,8 +60,10 @@ public class AlarmFragment extends Fragment implements View.OnClickListener{
         View view = inflater.inflate(R.layout.fragment_alarm, container, false);
 
         mSetAlarm = view.findViewById(R.id.setAlarm);
+        mNotificationExample = view.findViewById(R.id.notificationExample);
 
         mSetAlarm.setOnClickListener(this);
+        mNotificationExample.setOnClickListener(this);
 
         // Inflate the layout for this fragment
         return view;
@@ -92,39 +72,32 @@ public class AlarmFragment extends Fragment implements View.OnClickListener{
     @Override
     public void onClick(View view) {
 
-        /*Intent intentNotif = new Intent(getActivity(), MainActivity.class);
+        Intent intentNotif = new Intent(getActivity(), MainActivity.class);
         intentNotif.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         PendingIntent pendingIntent = PendingIntent.getActivity(getActivity(), 123, intentNotif, 0);
 
         NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(getActivity())
-                .setSmallIcon(R.drawable.ic_nfc)
-                .setContentTitle("Testing Notification")
-                .setContentText("Test test")
+                .setSmallIcon(R.drawable.medicineiconwhite)
+                .setContentTitle("Medication Alert")
+                .setContentText("It is time for you to take your medicine.")
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setContentIntent(pendingIntent)
-                .setAutoCancel(true);*/
+                .setAutoCancel(true);
 
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getActivity());
 
         switch (view.getId()) {
             case R.id.setAlarm:
 
-                //Intent intent = new Intent(getActivity(), SetAlarm.class);
-                //startActivity(intent);
-                Log.i(TAG, "onClick:" + view.getId());
-
                 getDate();
-
-                // Create an explicit intent for an Activity in your app
-
-                // notificationId is a unique int for each notification that you must define
-                //notificationManager.notify(123, mBuilder.build());
+                Log.i(TAG, "onClick:" + view.getId());
                 break;
-            /*case R.id.pastSevenDays:
 
-                startActivity(intent);
-                Log.i("HistoryFragment", "onClick:" + view.getId());
-                break;*/
+            case R.id.notificationExample:
+
+                notificationManager.notify(123, mBuilder.build());
+                Log.i(TAG, "onClick:" + view.getId());
+                break;
         }
     }
 
@@ -139,9 +112,7 @@ public class AlarmFragment extends Fragment implements View.OnClickListener{
             @Override
             public void onDateSet(DatePicker view, int year, int month, int day) {
                 if (view.isShown()) {
-                    //myCalender.set(Calendar.YEAR, year);
-                    //myCalender.set(Calendar.MONTH, month);
-                    //myCalender.set(Calendar.DAY_OF_MONTH, day);
+
                     alarmYear = year;
                     alarmMonth = month;
                     alarmDay = day;
@@ -151,7 +122,6 @@ public class AlarmFragment extends Fragment implements View.OnClickListener{
         };
         DatePickerDialog datePickerDialog = new DatePickerDialog(getActivity(), myDateListener, year, month, day);
         datePickerDialog.setTitle("Choose date:");
-        //datePickerDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
         datePickerDialog.show();
     }
 
@@ -165,12 +135,11 @@ public class AlarmFragment extends Fragment implements View.OnClickListener{
             @Override
             public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
                 if (view.isShown()) {
-                    //myCalender.set(Calendar.HOUR_OF_DAY, hourOfDay);
-                   // myCalender.set(Calendar.MINUTE, minute);
+
                     alarmHour = hourOfDay;
                     alarmMinute = minute;
                     String alarm = alarmHour+":"+alarmMinute+" "+alarmDay+"/"+(alarmMonth+1)+"/"+alarmYear;
-                    Toast.makeText(getActivity(), alarm, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getActivity(), "Alarm set for "+alarm, Toast.LENGTH_SHORT).show();
 
                     scheduleNotification(getNotification(alarm), 10000);
                 }
@@ -195,7 +164,7 @@ public class AlarmFragment extends Fragment implements View.OnClickListener{
     }
 
     private Notification getNotification(String content) {
-        /*Intent intentNotif = new Intent(getActivity(), MainActivity.class);
+        Intent intentNotif = new Intent(getActivity(), MainActivity.class);
         intentNotif.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         PendingIntent pendingIntent = PendingIntent.getActivity(getActivity(), 0, intentNotif, 0);
 
@@ -205,51 +174,7 @@ public class AlarmFragment extends Fragment implements View.OnClickListener{
                 .setContentText(content)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setContentIntent(pendingIntent)
-                .setAutoCancel(true);*/
-
-        Notification.Builder builder = new Notification.Builder(getActivity());
-        builder.setContentTitle("Scheduled Notification");
-        builder.setContentText(content);
-        builder.setSmallIcon(R.drawable.ic_nfc);
-        return builder.build();
+                .setAutoCancel(true);
+        return mBuilder.build();
     }
-
-    // TODO: Rename method, update argument and hook method into UI event
-    /*public void onButtonPressed(Uri uri) {
-        if (mListener != null) {
-            mListener.onFragmentInteraction(uri);
-        }
-    }
-
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        if (context instanceof OnFragmentInteractionListener) {
-            mListener = (OnFragmentInteractionListener) context;
-        } else {
-            throw new RuntimeException(context.toString()
-                    + " must implement OnFragmentInteractionListener");
-        }
-    }
-
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        mListener = null;
-    }*/
-
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
-    /*public interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
-        void onFragmentInteraction(Uri uri);
-    }*/
 }

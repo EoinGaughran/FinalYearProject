@@ -35,18 +35,12 @@ public class MainActivity extends AppCompatActivity{
 
     private Util.UserDataDbHelper mUserDataDbHelper = new Util.UserDataDbHelper(this);
 
-    public static String nfcTagInfo = "noDataRead";
-
     private static final String TAG = "Main Activity";
-    private static final int AWS_LIST_RESULT = 1;
     private static final int SIGN_IN_SUCCESSFUL = 2;
     private static final int NEW_ACCOUNT = 111;
 
     public static final String s3NfcDatabaseKey = "ServerData/NfcData.db";
     public static String s3UserDatabaseKey;
-    //public static final String s3UserDatabaseKey = "UserData/" + Util.getClientUserName() + ".db";
-
-    //public FeedReaderDbHelper mDbHelper = new FeedReaderDbHelper(this);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,8 +61,6 @@ public class MainActivity extends AppCompatActivity{
 
             Intent intent = new Intent(MainActivity.this, LoginActivity.class);
             startActivityForResult(intent, SIGN_IN_SUCCESSFUL);
-
-            //download the users database
         }
 
         s3UserDatabaseKey = "UserData/" + Util.getClientUserName() + ".db";
@@ -86,55 +78,10 @@ public class MainActivity extends AppCompatActivity{
         } else
             return false;
     }
-    /*
-    private static final String SQL_CREATE_ENTRIES =
-            "CREATE TABLE " + SqlLibraries.userLoginDatabase.TABLE_NAME + " (" +
-                    SqlLibraries.userInfoDatabase._ID + " INTEGER PRIMARY KEY," +
-                    SqlLibraries.userInfoDatabase.COLUMN_NFCDATA + " TEXT," +
-                    SqlLibraries.userInfoDatabase.COLUMN_TIME + " TEXT)";
-
-    private static final String SQL_DELETE_ENTRIES =
-            "DROP TABLE IF EXISTS " + SqlLibraries.userLoginDatabase.TABLE_NAME;
-
-
-
-    public static class FeedReaderDbHelper extends SQLiteOpenHelper {
-        // If you change the database schema, you must increment the database version.
-
-
-        public FeedReaderDbHelper(Context context) {
-            super(context, Constants.USER_LOGIN_DATABASE, null, Constants.USER_LOGIN_DATABASE_VERSION);
-        }
-
-        public void onCreate(SQLiteDatabase db) {
-            db.execSQL(SQL_CREATE_ENTRIES);
-        }
-        public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-            // This database is only a cache for online data, so its upgrade policy is
-            // to simply to discard the data and start over
-            db.execSQL(SQL_DELETE_ENTRIES);
-            onCreate(db);
-        }
-        public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-            onUpgrade(db, oldVersion, newVersion);
-        }
-    }*/
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (data != null) {
-        /*if(requestCode == AWS_LIST_RESULT && data != null){
-            if(resultCode == RESULT_OK){
-
-                String dataString = data.getStringExtra("key");
-                Log.i(TAG, "Context = " + dataString);
-                Log.i(TAG, "Password = " + Util.getUserPassword());
-                Log.i(TAG, "Username = " + Util.getClientUserName());
-
-                String key = data.getStringExtra("key");
-                new cloudDownload().execute(key);
-            }
-        }*/
 
             if (requestCode == SIGN_IN_SUCCESSFUL) {
 
@@ -144,34 +91,22 @@ public class MainActivity extends AppCompatActivity{
                 File NFC_DATABASE_FILE = new File(getDatabasePath(Constants.NFC_INFO_DATABASE).toString());
                 Log.i("NFC DATA FILE DOWNLOAD", "Local Directory: "+ NFC_DATABASE_FILE);
                 Log.i("NFC DATA FILE DOWNLOAD", "S3 Key: "+ s3NfcDatabaseKey);
-                TransferObserver nfcDownloadObserver = transferUtility.download(Constants.BUCKET_NAME, s3NfcDatabaseKey, NFC_DATABASE_FILE);
-
-                /*File USER_DATABASE_FILE = new File(getDatabasePath(Constants.USER_INFO_DATABASE).toString());
-                Log.i("NFC DATA FILE DOWNLOAD", "Local Directory: "+ USER_DATABASE_FILE);
-                Log.i("NFC DATA FILE DOWNLOAD", "S3 Key: "+ s3UserDatabaseKey);
-                TransferObserver userDataDownloadObserver = transferUtility.download(Constants.BUCKET_NAME, s3UserDatabaseKey, USER_DATABASE_FILE);*/
+                transferUtility.download(Constants.BUCKET_NAME, s3NfcDatabaseKey, NFC_DATABASE_FILE);
 
                 if (resultCode == RESULT_OK) {
 
-                    //refresh
-                    //initUI();
-
                     Log.i(TAG, "Login Succesful");
-                    //setup new sql library
-                    //FeedReaderDbHelper mDbHelper = new FeedReaderDbHelper(MainActivity.this);
-                    //SQLiteDatabase db = mDbHelper.getWritableDatabase();
 
                     //retrieve username
                     String key = data.getStringExtra("key");
 
                     //download users existing data from the cloud if it exists
-                    //new cloudDownload().execute(key+".db");
 
                     File USER_DATABASE_FILE = new File(getDatabasePath(Constants.USER_INFO_DATABASE).toString());
                     String s3FileKey = "UserData/"+key+".db";
                     Log.i("USER DATA FILE DOWNLOAD", "Local Directory: "+ USER_DATABASE_FILE);
                     Log.i("USER DATA FILE DOWNLOAD", "S3 Key: "+ s3FileKey);
-                    TransferObserver userDownloadObserver = transferUtility.download(Constants.BUCKET_NAME, s3FileKey, USER_DATABASE_FILE);
+                    transferUtility.download(Constants.BUCKET_NAME, s3FileKey, USER_DATABASE_FILE);
                 }
                 else if(resultCode == NEW_ACCOUNT) {
 
@@ -185,13 +120,6 @@ public class MainActivity extends AppCompatActivity{
     }
 
     public void initViews() {
-
-        /*mEtMessage = (EditText) findViewById(R.id.et_message);
-        mBtWrite = (Button) findViewById(R.id.btn_write);
-        mBtRead = (Button) findViewById(R.id.btn_read);
-
-        mTvMessage = (TextView) view.findViewById(R.id.tv_message);
-        mProgress = (ProgressBar) view.findViewById(R.id.progress);*/
 
         String loginDisplay = "Username: " +Util.getClientUserName();
 
@@ -211,75 +139,84 @@ public class MainActivity extends AppCompatActivity{
 
                 final File DATABASE_FILE = new File(getDatabasePath(Constants.USER_INFO_DATABASE).toString());
 
-                DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        switch (which){
-                            case DialogInterface.BUTTON_POSITIVE:
+                if(!DATABASE_FILE.exists()){
 
-                                if(isNetworkAvailable()){
+                    Log.i(TAG, "Error, no database");
+                    logOut();
+                }
+                else {
 
-                                    final ProgressDialog progressDialog = ProgressDialog.show(MainActivity.this,
-                                            "Uploading",
-                                            getString(R.string.please_wait));
+                    DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            switch (which) {
+                                case DialogInterface.BUTTON_POSITIVE:
 
-                                    progressDialog.show();
+                                    if (isNetworkAvailable()) {
 
-                                    TransferObserver uploadObserver =
-                                            transferUtility.upload(Constants.BUCKET_NAME,
-                                                    s3UserDatabaseKey,
-                                                    DATABASE_FILE);
+                                        final ProgressDialog progressDialog = ProgressDialog.show(MainActivity.this,
+                                                "Uploading",
+                                                getString(R.string.please_wait));
 
-                                    uploadObserver.setTransferListener(new TransferListener() {
+                                        progressDialog.show();
 
-                                        private static final String TAG = "logoutUploadDatabase";
+                                        TransferObserver uploadObserver =
+                                                transferUtility.upload(Constants.BUCKET_NAME,
+                                                        s3UserDatabaseKey,
+                                                        DATABASE_FILE);
 
-                                        @Override
-                                        public void onStateChanged(int id, TransferState state) {
-                                            if (TransferState.COMPLETED == state) {
+                                        uploadObserver.setTransferListener(new TransferListener() {
 
-                                                Log.i(TAG, "Upload Successful");
+                                            private static final String TAG = "logoutUploadDatabase";
 
-                                                Toast.makeText(MainActivity.this, "Database Sync Successful",
-                                                        Toast.LENGTH_LONG).show();
+                                            @Override
+                                            public void onStateChanged(int id, TransferState state) {
+                                                if (TransferState.COMPLETED == state) {
+
+                                                    Log.i(TAG, "Upload Successful");
+
+                                                    Toast.makeText(MainActivity.this, "Database Sync Successful",
+                                                            Toast.LENGTH_LONG).show();
+                                                }
                                             }
-                                        }
 
-                                        @Override
-                                        public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
-                                            float percentDonef = ((float) bytesCurrent / (float) bytesTotal) * 100;
-                                            int percentDone = (int) percentDonef;
+                                            @Override
+                                            public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
+                                                float percentDonef = ((float) bytesCurrent / (float) bytesTotal) * 100;
+                                                int percentDone = (int) percentDonef;
 
-                                            Log.d(TAG, "   ID:" + id + "   bytesCurrent: " + bytesCurrent + "   bytesTotal: " + bytesTotal + " " + percentDone + "%");
-                                            if(percentDone == 100) {
+                                                Log.d(TAG, "   ID:" + id + "   bytesCurrent: " + bytesCurrent + "   bytesTotal: " + bytesTotal + " " + percentDone + "%");
+                                                if (percentDone == 100) {
 
-                                                progressDialog.dismiss();
-                                                logOut();
+                                                    progressDialog.dismiss();
+                                                    logOut();
+                                                }
                                             }
-                                        }
 
-                                        @Override
-                                        public void onError(int id, Exception ex) {
-                                            Log.i(TAG, "Upload Failed");
-                                        }
+                                            @Override
+                                            public void onError(int id, Exception ex) {
+                                                Log.i(TAG, "Upload Failed");
+                                            }
 
-                                    });
-                                }
-                                else Toast.makeText(MainActivity.this, "Please enable your internet connection", Toast.LENGTH_SHORT).show();
+                                        });
+                                    } else
+                                        Toast.makeText(MainActivity.this, "Please enable your internet connection", Toast.LENGTH_SHORT).show();
 
-                                break;
+                                    break;
 
-                            case DialogInterface.BUTTON_NEGATIVE:
+                                case DialogInterface.BUTTON_NEGATIVE:
 
-                                logOut();
-                                break;
+                                    logOut();
+                                    break;
+                            }
                         }
-                    }
-                };
+                    };
 
-                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                builder.setMessage("Do you want to sync your database before logging out?").setPositiveButton("Yes", dialogClickListener)
-                        .setNegativeButton("No", dialogClickListener).show();
+
+                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                    builder.setMessage("Do you want to sync your database before logging out?").setPositiveButton("Yes", dialogClickListener)
+                            .setNegativeButton("No", dialogClickListener).show();
+                }
             }
         });
 
@@ -361,46 +298,11 @@ public class MainActivity extends AppCompatActivity{
 
     public void onNfcDetected(Ndef ndef){
 
-        //readFromNFC(ndef);
-
         new nfcReadTask(ndef).execute();
     }
 
-    /*private void readFromNFC(Ndef ndef) {
-
-        try {
-            ndef.connect();
-            NdefMessage ndefMessage = ndef.getNdefMessage();
-            String message = new String(ndefMessage.getRecords()[0].getPayload());
-            Log.d(TAG, "readFromNFC: "+message);
-
-            SQLiteDatabase db = mUserDataDbHelper.getWritableDatabase();
-
-            // Insert nfc data and time
-            ContentValues values = new ContentValues();
-            values.put(SqlLibraries.userInfoDatabase.COLUMN_NFCDATA, message);
-            values.put(SqlLibraries.userInfoDatabase.COLUMN_TIME, Calendar.getInstance().getTime().toString());
-
-            TextView nfcMessage = (TextView) findViewById(R.id.nfcResult);
-
-            nfcMessage.setText(message);
-
-            // Save the inserted data locally
-            //long newRowId = db.insert(SqlLibraries.userLoginDatabase.TABLE_NAME, null, values);
-            //Log.i("SQLWRITE", "RowId: "+ newRowId);
-
-            //mTvMessage.setText(message);
-            ndef.close();
-
-        } catch (IOException | FormatException | NullPointerException e) {
-            e.printStackTrace();
-
-        }
-    }*/
-
     private class nfcReadTask extends AsyncTask<Void, Integer, Void> {
 
-        private ProgressDialog dialog;
         private Ndef mNdef;
         private int index;
         private String message = "NoNfcRead";
@@ -420,8 +322,6 @@ public class MainActivity extends AppCompatActivity{
             }
             nfcProgress.setMax(max);
             index = 0;
-
-           // dialog = ProgressDialog.show(MainActivity.this,"Uploading",getString(R.string.please_wait));
         }
 
         @Override
@@ -431,6 +331,11 @@ public class MainActivity extends AppCompatActivity{
 
                 publishProgress();
 
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+
+                }
                 mNdef.connect();
 
                 publishProgress();
@@ -456,9 +361,21 @@ public class MainActivity extends AppCompatActivity{
 
                 publishProgress();
 
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+
+                }
+
                 mNdef.close();
 
                 publishProgress();
+
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+
+                }
 
             } catch (IOException | FormatException | NullPointerException e) {
                 e.printStackTrace();
@@ -469,17 +386,11 @@ public class MainActivity extends AppCompatActivity{
 
         @Override
         protected void onProgressUpdate(final Integer... values) {
-            //textview.setText(titles[index]);
+
             nfcProgress.incrementProgressBy(progr[index]);
             ++index;
         }
 
-        /*@Override
-        protected void onProgressUpdate(String... progress) {
-            Log.d("ANDRO_ASYNC",progress[0]);
-            //Update Progress
-            mProgressDialog.setProgress(Integer.parseInt(progress[0]));
-        }*/
 
         @Override
         protected void onPostExecute(Void result) {
@@ -491,8 +402,8 @@ public class MainActivity extends AppCompatActivity{
             nfcMessage.setText(nfcDisplay);
 
             nfcProgress.setVisibility(View.INVISIBLE);
-            //parent.finish();
-            //dialog.dismiss();
+            nfcProgress.setProgress(0);
+
         }
     }
 }

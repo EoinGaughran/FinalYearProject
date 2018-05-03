@@ -44,6 +44,7 @@
             app:layout_constraintHorizontal_bias="0.0"
             android:textSize="30sp"
             android:textStyle="bold"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:text="Click on a day"/>
 
 </android.support.constraint.ConstraintLayout>

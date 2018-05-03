@@ -1,18 +1,11 @@
 package com.rockfield.gmit.projectappfinal;
 
-import android.app.AlarmManager;
-import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.os.PowerManager;
-import android.widget.Toast;
 
 import android.app.Notification;
 import android.app.NotificationManager;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
 
 public class Alarm extends BroadcastReceiver {
 

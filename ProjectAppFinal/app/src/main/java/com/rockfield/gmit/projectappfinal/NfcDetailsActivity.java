@@ -25,15 +25,20 @@ public class NfcDetailsActivity extends AppCompatActivity {
 
         StringBuilder sb = new StringBuilder();
 
-        for (String mNfcReadDetail : mNfcReadDetails) {
+        sb.append("Mecidine Scan Details:\r\n");
 
-            sb.append(mNfcReadDetail + "\r\n");
-        }
+        sb.append("\r\nMedicine: " + mNfcDatabaseDetails[0]);
+        sb.append("\r\nRecommended: " + mNfcDatabaseDetails[4]);
+        sb.append("\r\nContains: " + mNfcDatabaseDetails[2]);
+        sb.append("\r\nBest Before: " + mNfcDatabaseDetails[1]);
+        sb.append("\r\nBatch code: " + mNfcDatabaseDetails[3]);
 
-        for (String mNfcDatabaseDetail : mNfcDatabaseDetails) {
+        sb.append("\r\n\nScan Details\r\n");
 
-            sb.append(mNfcDatabaseDetail + "\r\n");
-        }
+        sb.append("\r\nTime: " + mNfcReadDetails[4]);
+        sb.append("\r\nDay: " + mNfcReadDetails[1]);
+        sb.append("\r\nDate: " + mNfcReadDetails[2] +" "+ mNfcReadDetails[3] +" "+ mNfcReadDetails[5]);
+        sb.append("\r\nNFC Code: " + mNfcReadDetails[0]);
 
         mDisplayNfcDetails.setText(sb.toString());
     }

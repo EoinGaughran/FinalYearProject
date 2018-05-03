@@ -39,17 +39,14 @@ import java.util.List;
 
 import static android.Manifest.permission.READ_CONTACTS;
 
-/**
- * A login screen that offers login via email/password.
- */
 public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<Cursor> {
 
     private TransferUtility transferUtility;
     private final String s3FileKey = "ServerData/UserAccounts.db";
-    private FeedReaderDbHelper mDbHelper = new FeedReaderDbHelper(LoginActivity.this);
-
+    private Util.loginDbHelper mDbHelper = new Util.loginDbHelper(this);
 
     private boolean makeNewAccount = false;
+    private String loginResult;
 
     /**
      * Id to identity READ_CONTACTS permission request.
@@ -57,13 +54,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private static final int REQUEST_READ_CONTACTS = 0;
     private static final int NEW_ACCOUNT = 111;
 
-    /**
-     * A dummy authentication store containing known user names and passwords.
-     * TODO: remove after connecting to a real authentication system.
-     */
-    private static final String[] DUMMY_CREDENTIALS = new String[]{
-            "foo@example.com:hello", "bar@example.com:world"
-    };
     /**
      * Keep track of the login task to ensure we can cancel it if requested.
      */
@@ -118,40 +108,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         mProgressView = findViewById(R.id.login_progress);
     }
 
-    private static final String SQL_CREATE_ENTRIES =
-            "CREATE TABLE " + SqlLibraries.userLoginDatabase.TABLE_NAME + " (" +
-                    SqlLibraries.userLoginDatabase._ID + " INTEGER PRIMARY KEY," +
-                    SqlLibraries.userLoginDatabase.COLUMN_USERNAME + " TEXT," +
-                    SqlLibraries.userLoginDatabase.COLUMN_PASSWORD + " TEXT," +
-                    SqlLibraries.userLoginDatabase.COLUMN_LASTLOGOUT + " TEXT)";
-
-    private static final String SQL_DELETE_ENTRIES =
-            "DROP TABLE IF EXISTS " + SqlLibraries.userLoginDatabase.TABLE_NAME;
-
-
-
-    public class FeedReaderDbHelper extends SQLiteOpenHelper {
-        // If you change the database schema, you must increment the database version.
-
-
-        public FeedReaderDbHelper(Context context) {
-            super(context, Constants.USER_LOGIN_DATABASE, null, Constants.USER_LOGIN_DATABASE_VERSION);
-        }
-
-        public void onCreate(SQLiteDatabase db) {
-            db.execSQL(SQL_CREATE_ENTRIES);
-        }
-        public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-            // This database is only a cache for online data, so its upgrade policy is
-            // to simply to discard the data and start over
-            db.execSQL(SQL_DELETE_ENTRIES);
-            onCreate(db);
-        }
-        public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-            onUpgrade(db, oldVersion, newVersion);
-        }
-    }
-
     private void populateAutoComplete() {
         if (!mayRequestContacts()) {
             return;
@@ -194,7 +150,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             }
         }
     }
-
 
     /**
      * Attempts to sign in or register the account specified by the login form.
@@ -276,8 +231,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
                 observer.setTransferListener(new TransferListener() {
 
-                    //private final String mEmail = email;
-                    //private final String mPassword = password;
                     private static final String TAG = "DownloadLoginDatabase";
 
                     @Override
@@ -329,8 +282,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                                     new createAccountTask(email, password).execute();
                                 } else {
 
-                                    mPasswordView.setError("Account Already Exists");
-                                    mPasswordView.requestFocus();
+                                    mEmailView.setError("Account Already Exists");
+                                    mEmailView.requestFocus();
                                     showProgress(false);
 
                                     mDbHelper.close();
@@ -363,123 +316,19 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                                 Toast.LENGTH_LONG).show();
                     }
                 });
-
-            /*try {
-                Thread.sleep(5000);
-            } catch (InterruptedException e) {
-
-            }*/
-
             }
         }
     }
 
     private boolean isEmailValid(String email) {
-        //TODO: Replace this with your own logic
-        //return true;
-        //return email.contains("@");
-        return email.length() > 4;
+
+        return email.length() > 4 && email.length() < 21;
     }
 
     private boolean isPasswordValid(String password) {
-        //TODO: Replace this with your own logic
-        return password.length() > 4;
+
+        return password.length() > 4 && password.length() < 21;
     }
-
-    /*private void createAccount(){
-
-        File DATABASE_FILE = new File(getDatabasePath(Constants.USER_LOGIN_DATABASE).toString());
-        Log.i("S3 DATA FILE DOWNLOAD", "Local Directory: "+ DATABASE_FILE);
-        Log.i("S3 DATA FILE DOWNLOAD", "S3 Key: "+ s3FileKey);
-        TransferObserver observer = transferUtility.download(Constants.BUCKET_NAME, s3FileKey, DATABASE_FILE);
-
-        observer.setTransferListener(new TransferListener() {
-
-            private static final String TAG = "DownloadLoginDatabase";
-
-            @Override
-            public void onStateChanged(int id, TransferState state) {
-                if (TransferState.COMPLETED == state) {
-
-                    try {
-                        Thread.sleep(5000);
-                    } catch (InterruptedException e) {
-
-                    }
-
-                    Log.i(TAG, "Database Download Successful");
-
-
-                    SQLiteDatabase db = mDbHelper.getReadableDatabase();
-
-                    String email = mEmailView.getText().toString();
-                    String password = mPasswordView.getText().toString();
-
-                    String[] projection = {
-                            BaseColumns._ID,
-                            SqlLibraries.userLoginDatabase.COLUMN_PASSWORD,
-                            SqlLibraries.userLoginDatabase.COLUMN_LASTLOGOUT,
-                            SqlLibraries.userLoginDatabase.COLUMN_USERNAME
-                    };
-
-                    // Filter results WHERE "title" = 'My Title'
-
-                    String selection = SqlLibraries.userLoginDatabase.COLUMN_USERNAME + " = ?";
-                    String[] selectionArgs = { email };
-
-                    // How you want the results sorted in the resulting Cursor
-                    String sortOrder =
-                            SqlLibraries.userLoginDatabase.COLUMN_PASSWORD + " DESC";
-
-                    Cursor cursor = db.query(
-                            SqlLibraries.userLoginDatabase.TABLE_NAME,   // The table to query
-                            projection,             // The array of columns to return (pass null to get all)
-                            selection,              // The columns for the WHERE clause
-                            selectionArgs,          // The values for the WHERE clause
-                            null,                   // don't group the rows
-                            null,                   // don't filter by row groups
-                            sortOrder               // The sort order
-                    );
-
-                    if(!(cursor.moveToFirst()) || cursor.getCount() == 0) {
-
-                        db.close();
-
-                        Log.i("CreatAccountCheck", "Account Doesnt Exist");
-
-                        new createAccountTask(email, password).execute();
-                    }
-                    else{
-
-                        mPasswordView.setError("Account Already Exists");
-                        mPasswordView.requestFocus();
-                    }
-
-                    cursor.close();
-                }
-            }
-
-            @Override
-            public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
-                float percentDonef = ((float)bytesCurrent/(float)bytesTotal) * 100;
-                int percentDone = (int)percentDonef;
-
-                Log.d(TAG, "   ID:" + id + "   bytesCurrent: " + bytesCurrent + "   bytesTotal: " + bytesTotal + " " + percentDone + "%");
-            }
-
-            @Override
-            public void onError(int id, Exception ex) {
-                Log.i(TAG, "Download Failed");
-                Toast.makeText(LoginActivity.this, "DOWNLOAD FAILED: Check your internet connection",
-                        Toast.LENGTH_LONG).show();
-            }
-        });
-
-        if (TransferState.COMPLETED == observer.getState()) {
-
-
-        }
-    }*/
 
     /**
      * Shows the progress UI and hides the login form.
@@ -529,8 +378,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                         " = ?", new String[]{ContactsContract.CommonDataKinds.Email
                 .CONTENT_ITEM_TYPE},
 
-                // Show primary email addresses first. Note that there won't be
-                // a primary email address if the user hasn't specified one.
                 ContactsContract.Contacts.Data.IS_PRIMARY + " DESC");
     }
 
@@ -560,7 +407,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         mEmailView.setAdapter(adapter);
     }
 
-
     private interface ProfileQuery {
         String[] PROJECTION = {
                 ContactsContract.CommonDataKinds.Email.ADDRESS,
@@ -568,7 +414,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         };
 
         int ADDRESS = 0;
-        int IS_PRIMARY = 1;
     }
 
     private boolean isNetworkAvailable() {
@@ -586,7 +431,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         private final String mEmail;
         private final String mPassword;
-        private String loginResult;
         private boolean loginAccepted;
 
         UserLoginTask(String email, String password) {
@@ -596,51 +440,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         @Override
         protected Boolean doInBackground(Void... params) {
-            // TODO: attempt authentication against a network service.
 
             SQLiteDatabase db = mDbHelper.getReadableDatabase();
-
-            /*Log.i("S3 FILE DOWNLOAD", "Current local database location" + getDatabasePath(Constants.USER_LOGIN_DATABASE));
-            Log.i("S3 FILE DOWNLOAD", "Local Directory: "+ DATABASE_FILE);
-            TransferObserver downloadObserver = transferUtility.download(Constants.BUCKET_NAME, s3FileKey, DATABASE_FILE);
-
-            downloadObserver.setTransferListener(new TransferListener() {
-
-                private static final String TAG = "DownloadLoginDatabase";
-
-                @Override
-                public void onStateChanged(int id, TransferState state) {
-                    if (TransferState.COMPLETED == state) {
-
-                    }
-                }
-
-                @Override
-                public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
-                    float percentDonef = ((float)bytesCurrent/(float)bytesTotal) * 100;
-                    int percentDone = (int)percentDonef;
-
-                    Log.d(TAG, "   ID:" + id + "   bytesCurrent: " + bytesCurrent + "   bytesTotal: " + bytesTotal + " " + percentDone + "%");
-                }
-
-                @Override
-                public void onError(int id, Exception ex) {
-                    Log.i(TAG, "Download Failed");
-                }
-
-            });
-
-            if (TransferState.COMPLETED == downloadObserver.getState()) {
-
-
-            }
-
-            try {
-
-                Thread.sleep(5000);
-            } catch (InterruptedException e) {
-
-            }*/
 
             Log.i("login", "Database Download Successful");
 
@@ -724,10 +525,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
                 //save username for later use in other activities
                 Util.setClientUserName(mEmail);
-                //Util.setUserPassword(mPassword);
-
-                //Download user data
-                //new downloadDatabaseTask(getDatabasePath(Constants.USER_DATA_FILE).toString(), mEmail);
 
                 //return to main
                 Intent intent = new Intent();
@@ -739,8 +536,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 finish();
 
             } else {
-                //mPasswordView.setError(loginResult);
-                //mPasswordView.requestFocus();
+
                 Log.i("Account result", loginResult);
             }
 
@@ -748,26 +544,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             db.close();
             deleteDatabase(Constants.USER_LOGIN_DATABASE);
 
-            /*try {
-                // Simulate network access.
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                return false;
-            }*/
-
-            for (String credential : DUMMY_CREDENTIALS) {
-                String[] pieces = credential.split(":");
-                if (pieces[0].equals(mEmail)) {
-                    // Account exists, return true if the password matches.
-                    return pieces[1].equals(mPassword);
-                }
-            }
-
-            //db.close();
-            //mDbHelper.close();
-            //deleteDatabase(Constants.USER_LOGIN_DATABASE);
-
-            // TODO: register the new account here.
             return true;
         }
 
@@ -776,6 +552,14 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             mAuthTask = null;
             showProgress(false);
 
+            if(loginResult.equals("Password Incorrect")) {
+                mPasswordView.setError(loginResult);
+                mPasswordView.requestFocus();
+            }
+            else if(loginResult.equals("Username not found")){
+                mEmailView.setError(loginResult);
+                mEmailView.requestFocus();
+            }
         }
 
         @Override

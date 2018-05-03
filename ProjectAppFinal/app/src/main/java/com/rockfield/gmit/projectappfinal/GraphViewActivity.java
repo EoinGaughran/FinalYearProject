@@ -24,19 +24,14 @@ import java.util.List;
 
 public class GraphViewActivity extends ListActivity {
 
-    private static final String userDatabaseKey = "UserData/" + Util.getClientUserName() + ".db";
     private Util.NfcDataDbHelper nfcDataDbHelper = new Util.NfcDataDbHelper(GraphViewActivity.this);
     private static final String TAG = "GraphViewActivity";
 
     private SimpleAdapter simpleAdapter;
     private ArrayList<HashMap<String, String>>[] nfcReadDetails;
-    //private ArrayList<HashMap<String, String>> passDataToFragment;
 
     private TextView mListDetails;
-    private ListView mListView;
     private int listChoice;
-
-    private String day, month, year, time, name, useBy, details, batchCode, recommendations;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,7 +39,6 @@ public class GraphViewActivity extends ListActivity {
         setContentView(R.layout.activity_graph_view);
 
         mListDetails = (TextView) findViewById(R.id.listDetails);
-        //mListView = findViewById(R.layout.l);
 
         initUi();
     }
@@ -57,8 +51,6 @@ public class GraphViewActivity extends ListActivity {
         Util.UserDataDbHelper mUserDataDbHelper = new Util.UserDataDbHelper(this);
 
         SQLiteDatabase db = mUserDataDbHelper.getReadableDatabase();
-
-        //StringBuilder tempSQL = new StringBuilder();
 
         String table = SqlLibraries.userInfoDatabase.TABLE_NAME;
         String nfcColumn = SqlLibraries.userInfoDatabase.COLUMN_NFCDATA;
@@ -76,23 +68,11 @@ public class GraphViewActivity extends ListActivity {
         String[] timeRead;
 
         int [] inputCount = new int[daysTotal + 1];
-        int input = 0;
         int dayCount = 0;
         int calculateBiggest = 0;
         int biggestNumber = 0;
 
-        List itemIds = new ArrayList<>();
-        List timeList = new ArrayList<String>();
-        List titleNames = new ArrayList<String>();
-        //HashMap<String, Object> map = new HashMap<String, Object>();
-
-        //for (int i = 0; i < daysTotal; i++) {
-        //    nfcReadDetails[i] = new ArrayList<>();
-       // }
-
-
         nfcReadDetails  = (ArrayList<HashMap<String, String>>[])new ArrayList[daysTotal+1];
-        //ArrayList<String>[] lists = (ArrayList<String>[])new ArrayList[10];
 
         nfcReadDetails[0] = new ArrayList<>();
 
@@ -121,25 +101,17 @@ public class GraphViewActivity extends ListActivity {
 
                     HashMap<String, String> map = new HashMap<>();
                     map.put("details", cursor.getString(cursor.getColumnIndexOrThrow(SqlLibraries.userInfoDatabase.COLUMN_NFCDATA))+
-                            "/"+ timeRead[0] +"/"+ timeRead[1] +"/"+ timeRead[2] +"/"+ timeRead[3]);
+                            "/"+ timeRead[0] +"/"+ timeRead[1] +"/"+ timeRead[2] +"/"+ timeRead[3] +"/"+ timeRead[5]);
                     nfcReadDetails[dayCount].add(map);
 
-                    //HashMap<String, String> map = new HashMap<>();
-                    //map.put(day, cursor.getString(cursor.getColumnIndexOrThrow(SqlLibraries.userInfoDatabase.COLUMN_NFCDATA)));
-                    //results.add(map);
                     inputCount[dayCount]++;
                     calculateBiggest++;
-                    //itemIds.add(cursor.getLong(cursor.getColumnIndexOrThrow(SqlLibraries.userInfoDatabase._ID)));
-                    //titleNames.add(cursor.getString(cursor.getColumnIndexOrThrow(SqlLibraries.userInfoDatabase.COLUMN_NFCDATA)));
-                    //timeList.add(cursor.getString(cursor.getColumnIndexOrThrow(SqlLibraries.userInfoDatabase.COLUMN_TIME)));
                     cursor.moveToPrevious();
 
                     if(!cursor.isBeforeFirst()) {
                         timeRead = (cursor.getString(cursor.getColumnIndexOrThrow(SqlLibraries.userInfoDatabase.COLUMN_TIME))).split(" ");
                         day = timeRead[0] + timeRead[1] + timeRead[2];
                     }
-
-                    //Log.i(TAG, "timeRead: " +day +" currentDay: " + currentDay);
                 }
 
                 else {
@@ -164,8 +136,6 @@ public class GraphViewActivity extends ListActivity {
                 }
             }
 
-            //for(int i = 0; i < timeList.le)
-
             GraphView graph = (GraphView) findViewById(R.id.graph);
 
             DataPoint [] points = new DataPoint[dayCount+1];
@@ -178,9 +148,6 @@ public class GraphViewActivity extends ListActivity {
                 Log.i(TAG, "Day: " +(i+1));
                 Log.i(TAG, "Number of points: " + inputCount[i]);
                 points[i] = new DataPoint(i+1, inputCount[i]);
-
-                //String read[] = nfcReadDetails[i].get(0).get("details").split("/");
-                //labels[i] = read[1] + " " + read[2];
             }
 
             for( int i = 0; i < dayCount; i++){
@@ -190,13 +157,6 @@ public class GraphViewActivity extends ListActivity {
             }
 
             BarGraphSeries<DataPoint> series = new BarGraphSeries<>(points);
-            //cursor.close();
-
-            /*DataPoint[] points = new DataPoint[100];
-            for (int i = 0; i < points.length; i++) {
-                points[i] = new DataPoint(i, Math.sin(i * 0.5) * 20 * (Math.random() * 10 + 1));
-            }
-            LineGraphSeries<DataPoint> series = new LineGraphSeries<>(points);*/
 
             // set manual X bounds
             graph.getViewport().setYAxisBoundsManual(true);
@@ -215,11 +175,16 @@ public class GraphViewActivity extends ListActivity {
             graph.getViewport().setScalable(true);
             graph.getViewport().setScalableY(false);
 
-            StaticLabelsFormatter staticLabelsFormatter = new StaticLabelsFormatter(graph);
-            staticLabelsFormatter.setHorizontalLabels(labels);
-                //staticLabelsFormatter.setVerticalLabels(new String[] {"low", "middle", "high"});
-            graph.getGridLabelRenderer().setLabelFormatter(staticLabelsFormatter);
 
+            try{
+                StaticLabelsFormatter staticLabelsFormatter = new StaticLabelsFormatter(graph);
+                staticLabelsFormatter.setHorizontalLabels(labels);
+                graph.getGridLabelRenderer().setLabelFormatter(staticLabelsFormatter);
+            }
+            catch (RuntimeException e){
+
+                Log.e(TAG, "Error: "+e);
+            }
             graph.addSeries(series);
 
             series.setValueDependentColor(new ValueDependentColor<DataPoint>() {
@@ -232,7 +197,6 @@ public class GraphViewActivity extends ListActivity {
             series.setOnDataPointTapListener(new OnDataPointTapListener() {
                 @Override
                 public void onTap(Series series, DataPointInterface dataPoint) {
-                    //Toast.makeText(GraphViewActivity.this, "Series1: On Data Point clicked: "+dataPoint.getX(), Toast.LENGTH_SHORT).show();
 
                     int position = (int)dataPoint.getX()-1;
                     String read[] = nfcReadDetails[position].get(0).get("details").split("/");
@@ -248,16 +212,6 @@ public class GraphViewActivity extends ListActivity {
             // draw values on top
             series.setDrawValuesOnTop(true);
             series.setValuesOnTopColor(Color.RED);
-            //series.setValuesOnTopSize(50);
-
-            /*GraphView graph1 = (GraphView) findViewById(R.id.graph1);
-            LineGraphSeries<DataPoint> series1 = new LineGraphSeries<>(new DataPoint[]{
-                    new DataPoint(0, 1),
-                    new DataPoint(1, 5),
-                    new DataPoint(2, 3)
-            });
-            graph1.addSeries(series1);*/
-
         }
     }
 
@@ -279,7 +233,51 @@ public class GraphViewActivity extends ListActivity {
                 switch (view.getId()) {
                     case R.id.details:
                         TextView fileName = (TextView) view;
-                        fileName.setText((String) data);
+
+                        String [] nfcCode = data.toString().split("/");
+
+                        SQLiteDatabase db = nfcDataDbHelper.getReadableDatabase();
+
+                        String[] projection = {
+                                BaseColumns._ID,
+                                SqlLibraries.nfcDatabase.COLUMN_NFC_CODE,
+                                SqlLibraries.nfcDatabase.COLUMN_NAME
+                        };
+
+                        // Filter results WHERE "title" = 'My Title'
+
+                        String selection = SqlLibraries.nfcDatabase.COLUMN_NFC_CODE + " = ?";
+
+                        //Filter the nfcCode column with the nfc code we read from the choice in the list
+                        String[] selectionArgs = { nfcCode[0]};
+
+                        // How you want the results sorted in the resulting Cursor
+                        String sortOrder =
+                                SqlLibraries.nfcDatabase.COLUMN_NFC_CODE + " DESC";
+
+                        Cursor cursor = db.query(
+                                SqlLibraries.nfcDatabase.TABLE_NAME,   // The table to query
+                                projection,             // The array of columns to return (pass null to get all)
+                                selection,              // The columns for the WHERE clause
+                                selectionArgs,          // The values for the WHERE clause
+                                null,                   // don't group the rows
+                                null,                   // don't filter by row groups
+                                sortOrder               // The sort order
+                        );
+
+                        if(!(cursor.moveToFirst()) || cursor.getCount() == 0) {
+                            Log.i(TAG, "Error: Nfc code \""+nfcCode[0]+"\" isnt in the NfcDatabase");
+                            fileName.setText(nfcCode[0] +" at "+ nfcCode[4]);
+                        }
+                        else {
+
+                            String passDataToList = cursor.getString(cursor.getColumnIndexOrThrow(SqlLibraries.nfcDatabase.COLUMN_NAME
+                            ))+" at "+ nfcCode[4];
+
+                            fileName.setText(passDataToList);
+                        }
+
+                        cursor.close();
 
                         return true;
                 }
@@ -287,7 +285,6 @@ public class GraphViewActivity extends ListActivity {
             }
         });
         setListAdapter(simpleAdapter);
-
 
         // When an item is selected, finish the activity and pass back the S3
         // key associated with the object selected
@@ -355,11 +352,6 @@ public class GraphViewActivity extends ListActivity {
                     intent.putExtra("nfcReadDetails", nfcDetails);
                     intent.putExtra("nfcDatabaseDetails", passDataToFragment);
                     startActivity(intent);
-
-                /*passDataToFragment = new ArrayList<>();
-                HashMap<String, String> map = new HashMap<>();
-                map.put("details",
-                passDataToFragment.add(map);*/
                 }
 
 

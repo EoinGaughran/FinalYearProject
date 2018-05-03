@@ -28,14 +28,6 @@ import com.google.android.gms.plus.PlusOneButton;
 
 import java.io.File;
 
-/**
- * A fragment with a Google +1 button.
- * Activities that contain this fragment must implement the
- * {@link //dataOptionsFragment.OnFragmentInteractionListener} interface
- * to handle interaction events.
- * Use the {@link// dataOptionsFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
 public class dataOptionsFragment extends Fragment implements View.OnClickListener{
 
     private TransferUtility transferUtility;
@@ -43,21 +35,19 @@ public class dataOptionsFragment extends Fragment implements View.OnClickListene
 
     private static final String NFC_DATABASE_S3_KEY = "ServerData/NfcData.db";
 
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_FILEPATH= "filePath";
     private static final String ARG_USERNAME = "username";
     private static final String ARG_S3USERKEY = "s3UserKey";
     private static final String ARG_NFCDATABASEPATH = "nfcDatabasePath";
 
-
     // The request code must be 0 or greater.
     private static final int PLUS_ONE_REQUEST_CODE = 0;
 
     private static final String TAG = "dataOptionsFragment";
+
     // The URL to +1.  Must be a valid URL.
     private final String PLUS_ONE_URL = "http://developer.android.com";
-    // TODO: Rename and change types of parameters
+
     private String mDataBaseFilePath;
     private String mUsername;
     private String mUserDatabaseS3Key;
@@ -71,16 +61,6 @@ public class dataOptionsFragment extends Fragment implements View.OnClickListene
     public dataOptionsFragment() {
         // Required empty public constructor
     }
-
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param filePath Parameter 1.
-     * @param username Parameter 2.
-     * @param s3UserKey Parameter 3.
-     * @return A new instance of fragment dataOptionsFragment.
-     */
 
     public static dataOptionsFragment newInstance(String filePath, String username, String s3UserKey, String nfcDatabasePath) {
         dataOptionsFragment fragment = new dataOptionsFragment();
@@ -121,7 +101,6 @@ public class dataOptionsFragment extends Fragment implements View.OnClickListene
         mDeleteDatabase.setOnClickListener(this);
         mUpdateNfcDatabase.setOnClickListener(this);
 
-        //Find the +1 button
         mPlusOneButton = (PlusOneButton) view.findViewById(R.id.plus_one_button);
 
         return view;
@@ -208,11 +187,7 @@ public class dataOptionsFragment extends Fragment implements View.OnClickListene
         private ProgressDialog dialog;
         private File DATABASE_FILE = new File(mDataBaseFilePath);
         private String s3FileKey = "UserData/"+ mUsername + ".db";
-
-        uploadDatabaseTask() {
-            //mEmail = email;
-            //mPassword = password;
-        }
+        private boolean fileDoesntExist = true;
 
         @Override
         protected void onPreExecute() {
@@ -225,45 +200,54 @@ public class dataOptionsFragment extends Fragment implements View.OnClickListene
         @Override
         protected Void doInBackground(Void... keys) {
 
-            TransferObserver uploadObserver =
-                    transferUtility.upload(Constants.BUCKET_NAME,
-                            s3FileKey,
-                            DATABASE_FILE);
+            if(!DATABASE_FILE.exists()){
 
-            uploadObserver.setTransferListener(new TransferListener() {
+                Log.i(TAG, "Error, no database");
+                dialog.dismiss();
+                fileDoesntExist = true;
+            }
+            else {
+                fileDoesntExist = false;
+                TransferObserver uploadObserver =
+                        transferUtility.upload(Constants.BUCKET_NAME,
+                                s3FileKey,
+                                DATABASE_FILE);
 
-                private static final String TAG = "uploadDatabase";
+                uploadObserver.setTransferListener(new TransferListener() {
 
-                @Override
-                public void onStateChanged(int id, TransferState state) {
-                    if (TransferState.COMPLETED == state) {
+                    private static final String TAG = "uploadDatabase";
 
-                        Log.i(TAG, "Upload Successful");
+                    @Override
+                    public void onStateChanged(int id, TransferState state) {
+                        if (TransferState.COMPLETED == state) {
 
-                        Toast.makeText(getActivity(), "Database Sync Successful",
-                                Toast.LENGTH_LONG).show();
+                            Log.i(TAG, "Upload Successful");
+
+                            Toast.makeText(getActivity(), "Database Sync Successful",
+                                    Toast.LENGTH_LONG).show();
+                        }
                     }
-                }
 
-                @Override
-                public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
-                    float percentDonef = ((float) bytesCurrent / (float) bytesTotal) * 100;
-                    int percentDone = (int) percentDonef;
+                    @Override
+                    public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
+                        float percentDonef = ((float) bytesCurrent / (float) bytesTotal) * 100;
+                        int percentDone = (int) percentDonef;
 
-                    if(percentDone == 100) dialog.dismiss();
-                    Log.d(TAG, "   ID:" + id + "   bytesCurrent: " + bytesCurrent + "   bytesTotal: " + bytesTotal + " " + percentDone + "%");
-                }
+                        if (percentDone == 100) dialog.dismiss();
+                        Log.d(TAG, "   ID:" + id + "   bytesCurrent: " + bytesCurrent + "   bytesTotal: " + bytesTotal + " " + percentDone + "%");
+                    }
 
-                @Override
-                public void onError(int id, Exception ex) {
-                    Log.i(TAG, "Upload Failed");
+                    @Override
+                    public void onError(int id, Exception ex) {
+                        Log.i(TAG, "Upload Failed");
 
-                    Toast.makeText(getActivity(), "DOWNLOAD FAILED: Check your internet connection",
-                            Toast.LENGTH_LONG).show();
-                    dialog.dismiss();
-                }
+                        Toast.makeText(getActivity(), "DOWNLOAD FAILED: Check your internet connection",
+                                Toast.LENGTH_LONG).show();
+                        dialog.dismiss();
+                    }
 
-            });
+                });
+            }
 
             return null;
         }
@@ -271,6 +255,9 @@ public class dataOptionsFragment extends Fragment implements View.OnClickListene
         @Override
         protected void onPostExecute(Void result) {
 
+            if(fileDoesntExist)
+                Toast.makeText(getActivity(), "Your database is empty",
+                        Toast.LENGTH_LONG).show();
         }
     }
 
@@ -332,8 +319,6 @@ public class dataOptionsFragment extends Fragment implements View.OnClickListene
 
             observer.setTransferListener(new TransferListener() {
 
-                //private final String mEmail = email;
-                //private final String mPassword = password;
                 private static final String TAG = "DownloadNfcDatabase";
 
                 @Override
@@ -375,48 +360,4 @@ public class dataOptionsFragment extends Fragment implements View.OnClickListene
 
         }
     }
-
-
-
-
-    // TODO: Rename method, update argument and hook method into UI event
-    /*public void onButtonPressed(Uri uri) {
-        if (mListener != null) {
-            mListener.onFragmentInteraction(uri);
-        }
-    }
-
-
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        if (context instanceof OnFragmentInteractionListener) {
-            mListener = (OnFragmentInteractionListener) context;
-        } else {
-            throw new RuntimeException(context.toString()
-                    + " must implement OnFragmentInteractionListener");
-        }
-    }
-
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        mListener = null;
-    }
-    *;
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
-    /*public interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
-        void onFragmentInteraction(Uri uri);
-    }*/
-
 }
